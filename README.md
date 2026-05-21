@@ -26,6 +26,12 @@ In Application:
                 initializationStatus -> {
                 });
 ```
+Add AndroidManifest.xml
+```kotlin
+  <activity
+            android:name="com.hdn.adsmodule.ads.open.Overlay"
+            android:exported="false"/>
+```
 ## Usage
 ### Open
 set id
