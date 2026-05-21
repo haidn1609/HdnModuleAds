@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ad_unavailable">Ad Unavailable</string>
+    <string name="ad_is_loading">Ad is loading</string>
+</resources>

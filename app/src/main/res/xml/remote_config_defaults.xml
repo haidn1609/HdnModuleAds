@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<defaultsMap>
+    <entry>
+        <key>iap_enabled</key>
+        <value>true</value>
+    </entry>
+    <entry>
+        <key>enable_ads</key>
+        <value>true</value>
+    </entry>
+    <entry>
+        <key>intern_ads_time</key>
+        <value>45000</value>
+    </entry>
+    <entry>
+        <key>fix_inter_add_channel</key>
+        <value>false</value>
+    </entry>
+    <entry>
+        <key>native_dialog_ads_time</key>
+        <value>30000</value>
+    </entry>
+    <entry>
+        <key>native_collapse_ads_time</key>
+        <value>3000</value>
+    </entry>
+    <entry>
+        <key>config_native_show</key>
+        <value>{}</value>
+    </entry>
+    <entry>
+        <key>ob_lang_always</key>
+        <value>true</value>
+    </entry>
+    <entry>
+        <key>use_ob</key>
+        <value>true</value>
+    </entry>
+    <entry>
+        <key>config_id_ads</key>
+        <value>{}</value>
+    </entry>
+</defaultsMap>

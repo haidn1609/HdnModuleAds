@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:id="@+id/banner_ad"
+    android:layout_alignParentBottom="true"
+    android:layout_gravity="bottom|center"
+    android:background="@color/white"
+    android:orientation="vertical">
+    <View
+        android:id="@+id/view_d"
+        android:background="#7C0C5DAE"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"/>
+    <com.facebook.shimmer.ShimmerFrameLayout
+        android:id="@+id/tv_loading"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="#E0E0E0"
+            android:layout_gravity="center"
+            android:padding="8dp"
+            android:clipToPadding="false"
+            android:elevation="2dp"
+            android:backgroundTintMode="src_in"
+            android:backgroundTint="#DDDDDD"
+            android:clipChildren="false">
+
+            <!-- Hình ảnh giả như logo quảng cáo -->
+            <View
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginEnd="12dp"
+                android:background="@android:color/white"
+                android:backgroundTint="#CCCCCC"
+                android:layout_gravity="center_vertical" />
+
+            <!-- Phần văn bản quảng cáo -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="10dp"
+                    android:layout_marginBottom="6dp"
+                    android:background="@android:color/white"
+                    android:backgroundTint="#BBBBBB" />
+
+                <View
+                    android:layout_width="70pt"
+                    android:layout_height="10dp"
+                    android:background="@android:color/white"
+                    android:backgroundTint="#CCCCCC" />
+            </LinearLayout>
+        </LinearLayout>
+    </com.facebook.shimmer.ShimmerFrameLayout>
+
+    <LinearLayout
+        android:id="@+id/adView_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="vertical" />
+</FrameLayout>
