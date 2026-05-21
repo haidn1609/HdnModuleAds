@@ -1,6 +1,23 @@
 # Function:  
 Support load and show ads  
 # How to use  
+## Import
+Add it in your settings.gradle.kts at the end of repositories:
+```kotlin
+	dependencyResolutionManagement {
+		repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+		repositories {
+			mavenCentral()
+			maven { url = uri("https://jitpack.io") }
+		}
+	}
+```
+Add the dependency
+```kotlin
+dependencies {
+	        implementation("com.github.haidn1609:HdnModuleAds:1.0.0")
+	}
+```
 ## Init
 In Application:  
 ```kotlin
