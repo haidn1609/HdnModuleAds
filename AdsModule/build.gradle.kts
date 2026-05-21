@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
+    id("maven-publish")
 }
 
 android {
@@ -50,4 +51,18 @@ dependencies {
     implementation("com.google.android.gms:play-services-ads:24.1.0")
     implementation("com.facebook.shimmer:shimmer:0.5.0")
     implementation("com.google.code.gson:gson:2.14.0")
+}
+
+afterEvaluate {
+    publishing {
+        publications {
+            create<MavenPublication>("release") {
+                from(components["release"])
+
+                groupId = "com.github.username"
+                artifactId = "adsmodule"
+                version = "1.0.0"
+            }
+        }
+    }
 }
