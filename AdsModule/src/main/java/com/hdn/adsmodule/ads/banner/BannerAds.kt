@@ -26,15 +26,36 @@ import com.hdn.adsmodule.model.AdsLog
 import com.hdn.adsmodule.model._enum.BannerType
 
 object BannerAds {
-    private val bannerIdDefault: List<String>
-        get() = AdUnitParser.parse(
-            if (AdsController.isDebug) {
-                AdsIdConfig.Debug.BANNER
-            } else {
-                AdsIdConfig.Remote.BANNER
-            },
-            if (AdsController.isDebug) AdsIdConfig.Debug.BANNER else AdsIdConfig.Release.BANNER
-        )
+    private fun getBannerIdDefault(bannerType: BannerType): List<String> =
+        when (bannerType) {
+            BannerType.COLLAPSIBLE -> {
+                AdUnitParser.parse(
+                    if (AdsController.isDebug)
+                        AdsIdConfig.Debug.BANNER
+                    else
+                        AdsIdConfig.Remote.BANNER_COLLAPSIBLE,
+
+                    if (AdsController.isDebug)
+                        AdsIdConfig.Debug.BANNER
+                    else
+                        AdsIdConfig.Release.BANNER_COLLAPSIBLE
+                )
+            }
+
+            BannerType.NORMAL -> {
+                AdUnitParser.parse(
+                    if (AdsController.isDebug)
+                        AdsIdConfig.Debug.BANNER
+                    else
+                        AdsIdConfig.Remote.BANNER,
+
+                    if (AdsController.isDebug)
+                        AdsIdConfig.Debug.BANNER
+                    else
+                        AdsIdConfig.Release.BANNER
+                )
+            }
+        }
 
     private var globalBannerView: AdView? = null
     private var isBannerLoaded = false
@@ -61,7 +82,7 @@ object BannerAds {
     fun createBannerView(
         activity: Activity,
         type: BannerType,
-        adUnitIds: List<String> = bannerIdDefault,
+        adUnitIds: List<String> = getBannerIdDefault(type),
         onFinished: ((View) -> Unit)? = null,
     ): View {
         if (!AdsController.canShowAds()) {
@@ -95,7 +116,7 @@ object BannerAds {
         val bannerType = type
 
         val adSize = getAdSize(activity)
-        val idsToUse = adUnitIds.ifEmpty { bannerIdDefault }
+        val idsToUse = adUnitIds.ifEmpty { getBannerIdDefault(bannerType) }
         loadingText.minimumHeight = adSize.getHeightInPixels(activity)
 
         if (bannerType == BannerType.NORMAL) {

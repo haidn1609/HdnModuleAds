@@ -12,6 +12,7 @@ class AdsIdConfig {
     object Release {
         var APP_OPEN = ""
         var BANNER = ""
+        var BANNER_COLLAPSIBLE= ""
         var INTERSTITIAL = ""
         var INTERSTITIAL_SPLASH = ""
         var REWARDED = ""
@@ -20,6 +21,7 @@ class AdsIdConfig {
     object Remote {
         var APP_OPEN = ""
         var BANNER = ""
+        var BANNER_COLLAPSIBLE = ""
         var INTERSTITIAL = ""
         var INTERSTITIAL_SPLASH = ""
         var REWARDED = ""

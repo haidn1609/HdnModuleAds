@@ -69,6 +69,16 @@ object AdsManager {
     }
 
     @JvmStatic
+    fun setBncaIdRl(id: String) {
+        AdsIdConfig.Release.BANNER_COLLAPSIBLE = id
+    }
+
+    @JvmStatic
+    fun setBncaIdRm(id: String) {
+        AdsIdConfig.Remote.BANNER_COLLAPSIBLE = id
+    }
+
+    @JvmStatic
     fun setItaIdRl(id: String) {
         AdsIdConfig.Release.INTERSTITIAL = id
     }
