@@ -114,7 +114,7 @@ public class MainActivity extends AppCompatActivity {
                 R.layout.template_native_no_media,
                 binding.adFrame,
                 true,
-                1));
+                0));
         binding.showNtca.setOnClickListener(view -> AdsManager.loadAndShowNative(
                 this,
                 "native_collapse",
