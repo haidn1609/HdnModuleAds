@@ -32,6 +32,13 @@ Add AndroidManifest.xml
             android:name="com.hdn.adsmodule.ads.open.Overlay"
             android:exported="false"/>
 ```
+add build.gradle
+```kotlin
+ buildFeatures {
+        buildConfig = true
+        dataBinding = true
+    }
+```
 ## Usage
 ### Open
 set id
