@@ -1,7 +1,6 @@
 package com.hdn.adsmodule.ads
 
 import android.app.Activity
-import android.app.NativeActivity
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
@@ -157,19 +156,29 @@ object AdsManager {
     }
 
     @JvmStatic
-    fun showInterAds(activity: AppCompatActivity, callback: Callback?) {
+    fun showInterAds(
+        activity: AppCompatActivity,
+        callback: Callback?
+    ) {
         InterAds.showAdsBreak(activity, callback)
     }
 
     @JvmStatic
-    fun forceShowInterAds(activity: AppCompatActivity, callback: Callback?) {
+    fun forceShowInterAds(
+        activity: AppCompatActivity,
+        callback: Callback?
+    ) {
         InterAds.forceShowAdsBreak(activity, callback)
     }
 
     //    reward
     @JvmStatic
-    fun showRewardAds(activity: Activity, callback: RewardCallback) {
-        RewardAds.showRewardWithFallbackInter(activity, callback)
+    fun showRewardAds(
+        activity: Activity,
+        useWithoutVip: Boolean = false,
+        callback: RewardCallback
+    ) {
+        RewardAds.showRewardWithFallbackInter(activity, useWithoutVip, callback)
     }
 
     //    native

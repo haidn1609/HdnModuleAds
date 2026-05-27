@@ -63,17 +63,23 @@ object RewardAds {
 
     fun showRewardWithFallbackInter(
         activity: Activity,
+        useWithoutVip: Boolean = false,
         callback: RewardCallback
     ) {
-        show(activity, callback, useInterFallback = true)
+        show(activity, callback, useInterFallback = true, useWithoutVip = useWithoutVip)
     }
 
-    fun show(activity: Activity, callback: RewardCallback) {
-        show(activity, callback, useInterFallback = false)
+    fun show(activity: Activity, callback: RewardCallback, useWithoutVip: Boolean) {
+        show(activity, callback, useInterFallback = false, useWithoutVip = useWithoutVip)
     }
 
-    private fun show(activity: Activity, callback: RewardCallback, useInterFallback: Boolean) {
-        if (!AdsController.canShowAds()) {
+    private fun show(
+        activity: Activity,
+        callback: RewardCallback,
+        useInterFallback: Boolean,
+        useWithoutVip: Boolean = false
+    ) {
+        if (!AdsController.adsEnable || (AdsController.isVip && !useWithoutVip)) {
             callback.onPremium()
             return
         }
@@ -91,18 +97,19 @@ object RewardAds {
         currentAdUnitIds = rewardIdDefault
         val ad = rewardedAd
         if (ad != null) {
-            showInternal(activity, ad, callback, useInterFallback)
+            showInternal(activity, ad, callback, useInterFallback, useWithoutVip)
         } else {
-            loadAndShow(activity, callback, useInterFallback)
+            loadAndShow(activity, callback, useInterFallback, useWithoutVip)
         }
     }
 
     private fun loadAndShow(
         activity: Activity,
         callback: RewardCallback,
+        useWithoutVip: Boolean = false,
         useInterFallback: Boolean
     ) {
-        if (!AdsController.canShowAds()) {
+        if (!AdsController.adsEnable || (AdsController.isVip && !useWithoutVip)) {
             callback.onPremium()
             return
         }
@@ -121,7 +128,7 @@ object RewardAds {
             index = 0,
             onLoaded = { ad ->
                 dismissLoading()
-                showInternal(activity, ad, callback, useInterFallback)
+                showInternal(activity, ad, callback, useInterFallback, useWithoutVip)
             },
             onFailed = {
                 dismissLoading()
@@ -183,10 +190,11 @@ object RewardAds {
         activity: Activity,
         ad: RewardedAd,
         callback: RewardCallback,
-        useInterFallback: Boolean
+        useInterFallback: Boolean,
+        useWithoutVip: Boolean = false
     ) {
         hasEarnedReward = false
-        if (!AdsController.canShowAds()) {
+        if (!AdsController.adsEnable || (AdsController.isVip && !useWithoutVip)) {
             showAdUnavailableToast(activity)
             callback.onAdFailed()
             return

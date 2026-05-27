@@ -31,6 +31,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void initData() {
         AdsManager.setDebug(true);
+        AdsManager.setVip(true);
         RemoteManager.initRemoteConfig(() -> {
             Toast.makeText(this, "config done", Toast.LENGTH_SHORT).show();
 
@@ -53,15 +54,13 @@ public class MainActivity extends AppCompatActivity {
 
         binding.showOpa.setOnClickListener(view -> AdsManager.showOpenAds(this, null));
 
-        binding.showItsa.setOnClickListener(view -> AdsManager.showInterSplashAds(this, 0, "native_dialog_full",
-                () -> {
-                    Toast.makeText(this, "itsa start show", Toast.LENGTH_SHORT).show();
-                    return null;
-                },
-                () -> {
-                    Toast.makeText(this, "itsa start show done", Toast.LENGTH_SHORT).show();
-                    return null;
-                }));
+        binding.showItsa.setOnClickListener(view -> AdsManager.showInterSplashAds(this, 0, "native_dialog_full", () -> {
+            Toast.makeText(this, "itsa start show", Toast.LENGTH_SHORT).show();
+            return null;
+        }, () -> {
+            Toast.makeText(this, "itsa start show done", Toast.LENGTH_SHORT).show();
+            return null;
+        }));
         binding.showIta.setOnClickListener(view -> AdsManager.showInterAds(this, () -> {
             Toast.makeText(this, "ita show done", Toast.LENGTH_SHORT).show();
             return null;
@@ -71,7 +70,7 @@ public class MainActivity extends AppCompatActivity {
             return null;
         }));
 
-        binding.showRwa.setOnClickListener(view -> AdsManager.showRewardAds(this, new RewardAds.RewardCallback() {
+        binding.showRwa.setOnClickListener(view -> AdsManager.showRewardAds(this, true, new RewardAds.RewardCallback() {
             @Override
             public void onAdShowed() {
                 Toast.makeText(MainActivity.this, "start show ads", Toast.LENGTH_SHORT).show();
@@ -100,28 +99,8 @@ public class MainActivity extends AppCompatActivity {
             }
         }));
 
-        binding.showNta1.setOnClickListener(view -> AdsManager.loadAndShowNative(
-                this,
-                "native_home",
-                R.layout.template_native_media,
-                binding.adFrame,
-                true,
-                1
-        ));
-        binding.showNta2.setOnClickListener(view -> AdsManager.loadAndShowNative(
-                this,
-                "native_home",
-                R.layout.template_native_no_media,
-                binding.adFrame,
-                true,
-                0));
-        binding.showNtca.setOnClickListener(view -> AdsManager.loadAndShowNative(
-                this,
-                "native_collapse",
-                R.layout.template_native_collapse,
-                binding.adFrame,
-                true,
-                1
-        ));
+        binding.showNta1.setOnClickListener(view -> AdsManager.loadAndShowNative(this, "native_home", R.layout.template_native_media, binding.adFrame, true, 1));
+        binding.showNta2.setOnClickListener(view -> AdsManager.loadAndShowNative(this, "native_home", R.layout.template_native_no_media, binding.adFrame, true, 0));
+        binding.showNtca.setOnClickListener(view -> AdsManager.loadAndShowNative(this, "native_collapse", R.layout.template_native_collapse, binding.adFrame, true, 1));
     }
 }
