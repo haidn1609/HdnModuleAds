@@ -32,8 +32,7 @@ import kotlin.ranges.coerceAtLeast
 import kotlin.text.isNullOrEmpty
 
 class NativeAdManager(
-    private val key: String,
-    private val adUnitIds: List<String>
+    private val key: String, private val adUnitIds: List<String>
 ) {
 
     private val TAG = "NativeAdManager"
@@ -44,6 +43,10 @@ class NativeAdManager(
     var isLoading: Boolean = false
         private set
 
+    private enum class LoadMode {
+        CACHE, NO_CACHE
+    }
+
     private var pendingShow: PendingShow? = null
     private var currentIndex = 0
 
@@ -53,7 +56,10 @@ class NativeAdManager(
         val layoutResId: Int
     )
 
-    fun preload(activity: Activity, cacheSize: Int = 1) {
+    fun preload(
+        activity: Activity, cacheSize: Int = 1
+    ) {
+
         if (!AdsController.canShowAds()) {
             destroy()
             return
@@ -61,17 +67,24 @@ class NativeAdManager(
 
         desiredCacheSize = cacheSize.coerceAtLeast(0)
 
-        // FIX cacheSize = 0
-        if (desiredCacheSize == 0) return
+        if (desiredCacheSize == 0) {
+            return
+        }
 
-        if (adUnitIds.isEmpty() || isLoading || cachedAds.size >= desiredCacheSize) return
+        if (adUnitIds.isEmpty() || isLoading || cachedAds.size >= desiredCacheSize) {
+            return
+        }
 
         isLoading = true
         currentIndex = 0
-        loadNextAd(activity)
+
+        loadNextAd(activity, LoadMode.CACHE)
     }
 
-    private fun loadNextAd(activity: Activity) {
+    private fun loadNextAd(
+        activity: Activity, mode: LoadMode
+    ) {
+
         if (currentIndex >= adUnitIds.size) {
             isLoading = false
             tryShowPending()
@@ -80,79 +93,84 @@ class NativeAdManager(
 
         val adUnitId = adUnitIds[currentIndex]
 
-        val adLoader = AdLoader.Builder(activity, adUnitId)
-            .forNativeAd { ad ->
-                activeAds.add(ad)
-                cachedAds.addLast(ad)
+        val adLoader = AdLoader.Builder(activity, adUnitId).forNativeAd { ad ->
 
-                AdsManager.onAdsLog(
-                    AdsLog(
-                        "nta_$key",
-                        adUnitId,
-                        "load",
-                        "load_success",
-                        null
-                    )
-                )
+                activeAds.add(ad)
+
+                when (mode) {
+
+                    LoadMode.CACHE -> {
+                        cachedAds.addLast(ad)
+
+                        isLoading = false
+                        tryShowPending()
+
+                        if (desiredCacheSize > 0 && cachedAds.size < desiredCacheSize) {
+                            preload(activity, desiredCacheSize)
+                        }
+                    }
+
+                    LoadMode.NO_CACHE -> {
+
+                        isLoading = false
+
+                        val pending = pendingShow
+
+                        val container = pending?.containerRef?.get()
+
+                        if (pending != null && container != null) {
+
+                            val adView = activity.layoutInflater.inflate(
+                                pending.layoutResId, container, false
+                            ) as NativeAdView
+
+                            populateNativeAdView(
+                                activity, adView, ad, container
+                            )
+
+                            pendingShow = null
+                        } else {
+                            releaseAd(ad)
+                        }
+                    }
+                }
 
                 ad.setOnPaidEventListener { adValue ->
                     AdsManager.onAdsPair(
                         AdValue(
-                            adValue,
-                            ad.responseInfo?.loadedAdapterResponseInfo
+                            adValue, ad.responseInfo?.loadedAdapterResponseInfo
                         )
                     )
                 }
 
-                isLoading = false
-                tryShowPending()
+                AdsManager.onAdsLog(
+                    AdsLog(
+                        "nta_$key", adUnitId, "load", "load_success", null
+                    )
+                )
+            }.withAdListener(object : AdListener() {
 
-                // FIX cacheSize = 0
-                if (
-                    desiredCacheSize > 0 &&
-                    cachedAds.size < desiredCacheSize
+                override fun onAdFailedToLoad(
+                    loadAdError: LoadAdError
                 ) {
-                    preload(activity, desiredCacheSize)
-                }
-            }
-            .withAdListener(object : AdListener() {
-
-                override fun onAdFailedToLoad(loadAdError: LoadAdError) {
 
                     AdsManager.onAdsLog(
                         AdsLog(
-                            "nta_$key",
-                            adUnitId,
-                            "load",
-                            "load_failed",
-                            loadAdError
+                            "nta_$key", adUnitId, "load", "load_failed", loadAdError
                         )
                     )
 
                     currentIndex++
-                    loadNextAd(activity)
-                }
-            })
-            .withNativeAdOptions(
-                NativeAdOptions.Builder()
-                    .setVideoOptions(
-                        VideoOptions.Builder()
-                            .setStartMuted(true)
-                            .build()
-                    )
-                    .build()
-            )
-            .build()
 
-        AdsManager.onAdsLog(
-            AdsLog(
-                "nta_$key",
-                adUnitId,
-                "load",
-                "start_load",
-                null
-            )
-        )
+                    loadNextAd(
+                        activity, mode
+                    )
+                }
+            }).withNativeAdOptions(
+                NativeAdOptions.Builder().setVideoOptions(
+                        VideoOptions.Builder().setStartMuted(true).build()
+                    ).build()
+            ).build()
 
         adLoader.loadAd(
             AdRequest.Builder().build()
@@ -168,11 +186,7 @@ class NativeAdManager(
 
         AdsManager.onAdsLog(
             AdsLog(
-                "nta_$key",
-                "",
-                "try_show_pending",
-                "call_show_pending",
-                null
+                "nta_$key", "", "try_show_pending", "call_show_pending", null
             )
         )
 
@@ -180,11 +194,7 @@ class NativeAdManager(
 
             AdsManager.onAdsLog(
                 AdsLog(
-                    "nta_$key",
-                    "",
-                    "try_show_pending",
-                    "err_view_unavailable",
-                    null
+                    "nta_$key", "", "try_show_pending", "err_view_unavailable", null
                 )
             )
 
@@ -198,11 +208,7 @@ class NativeAdManager(
 
             AdsManager.onAdsLog(
                 AdsLog(
-                    "nta_$key",
-                    "",
-                    "try_show_pending",
-                    "err_ad_null",
-                    null
+                    "nta_$key", "", "try_show_pending", "err_ad_null", null
                 )
             )
 
@@ -210,36 +216,23 @@ class NativeAdManager(
         }
 
         val adView = activity.layoutInflater.inflate(
-            pending.layoutResId,
-            container,
-            false
+            pending.layoutResId, container, false
         ) as NativeAdView
 
         AdsManager.onAdsLog(
             AdsLog(
-                "nta_$key",
-                "",
-                "try_show_pending",
-                "call_show",
-                null
+                "nta_$key", "", "try_show_pending", "call_show", null
             )
         )
 
         populateNativeAdView(
-            activity,
-            adView,
-            ad,
-            container
+            activity, adView, ad, container
         )
 
         pendingShow = null
 
         // FIX cacheSize = 0
-        if (
-            desiredCacheSize > 0 &&
-            cachedAds.size < desiredCacheSize &&
-            !isLoading
-        ) {
+        if (desiredCacheSize > 0 && cachedAds.size < desiredCacheSize && !isLoading) {
             preload(activity, desiredCacheSize)
         }
     }
@@ -263,24 +256,15 @@ class NativeAdManager(
         pollCachedAd()?.let { ad ->
 
             val adView = activity.layoutInflater.inflate(
-                layoutResId,
-                container,
-                false
+                layoutResId, container, false
             ) as NativeAdView
 
             populateNativeAdView(
-                activity,
-                adView,
-                ad,
-                container
+                activity, adView, ad, container
             )
 
             // FIX cacheSize = 0
-            if (
-                desiredCacheSize > 0 &&
-                cachedAds.size < desiredCacheSize &&
-                !isLoading
-            ) {
+            if (desiredCacheSize > 0 && cachedAds.size < desiredCacheSize && !isLoading) {
                 preload(activity, desiredCacheSize)
             }
 
@@ -301,10 +285,7 @@ class NativeAdManager(
     }
 
     fun loadAndShow(
-        activity: Activity,
-        container: FrameLayout,
-        layoutResId: Int,
-        cacheSize: Int = 1
+        activity: Activity, container: FrameLayout, layoutResId: Int, cacheSize: Int = 1
     ): Boolean {
 
         if (!AdsController.canShowAds()) {
@@ -318,24 +299,14 @@ class NativeAdManager(
         pollCachedAd()?.let { ad ->
 
             val adView = activity.layoutInflater.inflate(
-                layoutResId,
-                container,
-                false
+                layoutResId, container, false
             ) as NativeAdView
 
             populateNativeAdView(
-                activity,
-                adView,
-                ad,
-                container
+                activity, adView, ad, container
             )
 
-            // FIX cacheSize = 0
-            if (
-                desiredCacheSize > 0 &&
-                cachedAds.size < desiredCacheSize &&
-                !isLoading
-            ) {
+            if (desiredCacheSize > 0 && cachedAds.size < desiredCacheSize && !isLoading) {
                 preload(activity, desiredCacheSize)
             }
 
@@ -343,16 +314,29 @@ class NativeAdManager(
         }
 
         pendingShow = PendingShow(
-            activityRef = WeakReference(activity),
-            containerRef = WeakReference(container),
-            layoutResId = layoutResId
+            WeakReference(activity), WeakReference(container), layoutResId
         )
 
         if (!isLoading) {
-            preload(activity, desiredCacheSize)
+
+            if (desiredCacheSize == 0) {
+                loadSingleAdForShow(activity)
+            } else {
+                preload(activity, desiredCacheSize)
+            }
         }
 
         return false
+    }
+
+    private fun loadSingleAdForShow(activity: Activity) {
+
+        if (adUnitIds.isEmpty() || isLoading) return
+
+        isLoading = true
+        currentIndex = 0
+
+        loadNextAd(activity, LoadMode.NO_CACHE)
     }
 
     private fun populateNativeAdView(
@@ -366,11 +350,7 @@ class NativeAdManager(
 
             AdsManager.onAdsLog(
                 AdsLog(
-                    "nta_$key",
-                    "",
-                    "show",
-                    "err_activity_unavailable",
-                    null
+                    "nta_$key", "", "show", "err_activity_unavailable", null
                 )
             )
 
@@ -380,11 +360,7 @@ class NativeAdManager(
 
         AdsManager.onAdsLog(
             AdsLog(
-                "nta_$key",
-                "",
-                "show",
-                "start_show",
-                null
+                "nta_$key", "", "show", "start_show", null
             )
         )
 
@@ -404,12 +380,11 @@ class NativeAdManager(
 
                 mv.mediaContent = ad.mediaContent
 
-                mv.visibility =
-                    if (ad.mediaContent != null) {
-                        View.VISIBLE
-                    } else {
-                        View.GONE
-                    }
+                mv.visibility = if (ad.mediaContent != null) {
+                    View.VISIBLE
+                } else {
+                    View.GONE
+                }
             }
 
             bindText(R.id.primary, ad.headline) {
@@ -462,11 +437,7 @@ class NativeAdManager(
 
                     AdsManager.onAdsLog(
                         AdsLog(
-                            "nta_$key",
-                            "",
-                            "ad_click",
-                            "close_click",
-                            null
+                            "nta_$key", "", "ad_click", "close_click", null
                         )
                     )
 
@@ -479,11 +450,7 @@ class NativeAdManager(
 
             AdsManager.onAdsLog(
                 AdsLog(
-                    "nta_$key",
-                    "",
-                    "show",
-                    "show_done",
-                    null
+                    "nta_$key", "", "show", "show_done", null
                 )
             )
         }
@@ -523,9 +490,7 @@ class NativeAdManager(
     }
 
     private inline fun NativeAdView.bindText(
-        resId: Int,
-        text: String?,
-        registerView: (View) -> Unit
+        resId: Int, text: String?, registerView: (View) -> Unit
     ) {
 
         val view = findViewById<View>(resId) ?: return
