@@ -7,6 +7,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.hdn.adsmodule.ads.banner.BannerAds
 import com.hdn.adsmodule.ads.inter.Callback
 import com.hdn.adsmodule.ads.inter.InterAds
+import com.hdn.adsmodule.ads.inter.InterCallback
 import com.hdn.adsmodule.ads.inter.InterSplashAds
 import com.hdn.adsmodule.ads.nativeAds.NativeAds
 import com.hdn.adsmodule.ads.open.OpenAds
@@ -158,27 +159,42 @@ object AdsManager {
     @JvmStatic
     fun showInterAds(
         activity: AppCompatActivity,
-        callback: Callback?
+        useWithoutVip: Boolean,
+        callback: InterCallback?
     ) {
-        InterAds.showAdsBreak(activity, callback)
+        InterAds.showAdsBreak(activity, useWithoutVip, callback)
     }
+
+    @JvmStatic
+    fun showInterAds(activity: AppCompatActivity, callback: InterCallback?) =
+        showInterAds(activity, false, callback)
 
     @JvmStatic
     fun forceShowInterAds(
         activity: AppCompatActivity,
-        callback: Callback?
+        useWithoutVip: Boolean,
+        callback: InterCallback?
     ) {
-        InterAds.forceShowAdsBreak(activity, callback)
+        InterAds.forceShowAdsBreak(activity, useWithoutVip, callback)
     }
+
+    @JvmStatic
+    fun forceShowInterAds(activity: AppCompatActivity, callback: InterCallback?) =
+        forceShowInterAds(activity, false, callback)
 
     //    reward
     @JvmStatic
     fun showRewardAds(
         activity: Activity,
+        useInterFallback: Boolean = false,
         useWithoutVip: Boolean = false,
         callback: RewardCallback
     ) {
-        RewardAds.showRewardWithFallbackInter(activity, useWithoutVip, callback)
+        if (useInterFallback) {
+            RewardAds.showRewardWithFallbackInter(activity, useWithoutVip, callback)
+        } else {
+            RewardAds.show(activity, callback, useWithoutVip)
+        }
     }
 
     //    native

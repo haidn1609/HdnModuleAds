@@ -25,6 +25,8 @@ import kotlin.let
 import kotlin.run
 
 typealias Callback = (() -> Unit)
+// Callback show inter: true = show thành công, false = không show được
+typealias InterCallback = ((Boolean) -> Unit)
 
 object InterAds {
     private val interIdDefault: List<String>
@@ -45,15 +47,17 @@ object InterAds {
     private var loadTimeAd: Long = 0
     var interAdsTime = 45000L
     @JvmStatic
+    @JvmOverloads
     fun initInterAds(
         context: Context,
         adUnitIds: List<String> = interIdDefault,
         isForceReload: Boolean = false,
         onLoadSuccess: (() -> Unit)? = null,
-        onLoadError: (() -> Unit)? = null
+        onLoadError: (() -> Unit)? = null,
+        useWithoutVip: Boolean = false
     ) {
         currentAdUnitIds = adUnitIds.ifEmpty { interIdDefault }
-        if (!AdsController.canShowAds()) {
+        if (!AdsController.canShowAds(useWithoutVip)) {
             clear()
             onLoadSuccess?.invoke()
             return
@@ -159,44 +163,57 @@ object InterAds {
         get() = Date().time - loadTimeAd > 3600000 * 4
 
     @JvmStatic
-    fun forceShowAdsBreak(activity: Activity, callback: Callback?) {
+    fun forceShowAdsBreak(activity: Activity, useWithoutVip: Boolean, callback: InterCallback?) {
         isCoolingDown = false
         AdsManager.onAdsLog(AdsLog("ita", "", "force_show", "call_show", null))
         if (!isCanForceShowAds) {
             AdsManager.onAdsLog(AdsLog("ita", "", "force_show", "err_cant_show", null))
-            initInterAds(activity)
-            callback?.invoke()
+            initInterAds(context = activity, useWithoutVip = useWithoutVip)
+            callback?.invoke(false)
             return
         }
 
         if (activity is AppCompatActivity) {
-            showAdsFull(activity, callback)
+            showAdsFull(activity, useWithoutVip, callback)
         } else {
             AdsManager.onAdsLog(AdsLog("ita", "", "force_show", "err_not_activity", null))
-            callback?.invoke()
-        }
-    }
-    @JvmStatic
-    fun showAdsBreak(activity: Activity?, callback: Callback?) {
-        AdsManager.onAdsLog(AdsLog("ita", "", "show", "call_show", null))
-        if (isCanShowAds && activity is AppCompatActivity) {
-            showAdsFull(activity, callback)
-        } else {
-            AdsManager.onAdsLog(AdsLog("ita", "", "show", "err_call_show", null))
-            activity?.let { initInterAds(it) }
-            callback?.invoke()
+            callback?.invoke(false)
         }
     }
 
-    private fun showAdsFull(context: AppCompatActivity, callback: Callback?) {
-        if (!AdsController.canShowAds()) {
-            callback?.invoke()
+    @JvmStatic
+    fun forceShowAdsBreak(activity: Activity, callback: InterCallback?) =
+        forceShowAdsBreak(activity, false, callback)
+
+    @JvmStatic
+    fun showAdsBreak(activity: Activity?, useWithoutVip: Boolean, callback: InterCallback?) {
+        AdsManager.onAdsLog(AdsLog("ita", "", "show", "call_show", null))
+        if (isCanShowAds && activity is AppCompatActivity) {
+            showAdsFull(activity, useWithoutVip, callback)
+        } else {
+            AdsManager.onAdsLog(AdsLog("ita", "", "show", "err_call_show", null))
+            activity?.let { initInterAds(context = it, useWithoutVip = useWithoutVip) }
+            callback?.invoke(false)
+        }
+    }
+
+    @JvmStatic
+    fun showAdsBreak(activity: Activity?, callback: InterCallback?) =
+        showAdsBreak(activity, false, callback)
+
+    private fun showAdsFull(
+        context: AppCompatActivity,
+        useWithoutVip: Boolean,
+        callback: InterCallback?
+    ) {
+        if (!AdsController.canShowAds(useWithoutVip)) {
+            callback?.invoke(false)
             return
         }
 
         val currentAd = mInterstitialAd ?: run {
             AdsManager.onAdsLog(AdsLog("ita", "", "show_ads_full", "show_failed_ad_null", null))
-            callback?.invoke()
+            callback?.invoke(false)
             return
         }
 
@@ -205,8 +222,8 @@ object InterAds {
                 AdsManager.onAdsLog(AdsLog("ita", "", "show_ads_full", "show_failed", adError))
                 mInterstitialAd = null
                 isShowing = false
-                initInterAds(context)
-                callback?.invoke()
+                initInterAds(context = context, useWithoutVip = useWithoutVip)
+                callback?.invoke(false)
             }
 
             override fun onAdShowedFullScreenContent() {
@@ -219,8 +236,8 @@ object InterAds {
                 isShowing = false
                 mInterstitialAd = null
                 startDelay()
-                initInterAds(context)
-                callback?.invoke()
+                initInterAds(context = context, useWithoutVip = useWithoutVip)
+                callback?.invoke(true)
             }
         }
 

@@ -86,7 +86,7 @@ object RewardAds {
         if (isShowing) {
             showAdUnavailableToast(activity)
             if (useInterFallback) {
-                showInterFallback(activity, callback)
+                showInterFallback(activity, useWithoutVip, callback)
             } else {
                 AdsManager.onAdsLog(AdsLog("rwa", "", "show", "err_showing", null))
                 callback.onAdFailed()
@@ -136,7 +136,7 @@ object RewardAds {
                 isLoading = false
                 showAdUnavailableToast(activity)
                 if (useInterFallback) {
-                    showInterFallback(activity, callback)
+                    showInterFallback(activity, useWithoutVip, callback)
                 } else {
                     callback.onAdFailed()
                 }
@@ -213,7 +213,7 @@ object RewardAds {
                 isShowing = false
                 showAdUnavailableToast(activity)
                 if (useInterFallback) {
-                    showInterFallback(activity, callback)
+                    showInterFallback(activity, useWithoutVip, callback)
                 } else {
                     callback.onAdFailed()
                 }
@@ -239,11 +239,19 @@ object RewardAds {
         }
     }
 
-    private fun showInterFallback(activity: Activity, callback: RewardCallback) {
+    private fun showInterFallback(
+        activity: Activity,
+        useWithoutVip: Boolean,
+        callback: RewardCallback
+    ) {
         callback.onAdShowed()
         AdsManager.onAdsLog(AdsLog("rwa", "", "show_ita_fall_back", "call_show", null))
-        InterAds.forceShowAdsBreak(activity) {
-            callback.onRewardEarned()
+        InterAds.forceShowAdsBreak(activity, useWithoutVip) {
+            if (it) {
+                callback.onRewardEarned()
+            } else {
+                callback.onAdFailed()
+            }
             callback.onAdClosed()
         }
     }

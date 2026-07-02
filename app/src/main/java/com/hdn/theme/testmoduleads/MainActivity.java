@@ -31,6 +31,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void initData() {
         AdsManager.setDebug(true);
+        AdsManager.setVip(true);
         RemoteManager.initRemoteConfig(() -> {
             Toast.makeText(this, "config done", Toast.LENGTH_SHORT).show();
 
@@ -42,7 +43,7 @@ public class MainActivity extends AppCompatActivity {
             return null;
         });
         AdsManager.setAdsLog(adValue -> {
-            Log.e("Ads_log", new Gson().toJson(adValue));
+            Log.e("Ads_log", adValue.toString());
             return null;
         });
     }
@@ -60,16 +61,16 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(this, "itsa start show done", Toast.LENGTH_SHORT).show();
             return null;
         }));
-        binding.showIta.setOnClickListener(view -> AdsManager.showInterAds(this, () -> {
-            Toast.makeText(this, "ita show done", Toast.LENGTH_SHORT).show();
+        binding.showIta.setOnClickListener(view -> AdsManager.showInterAds(this, success -> {
+            Toast.makeText(this, "ita show done: " + success, Toast.LENGTH_SHORT).show();
             return null;
         }));
-        binding.showItaFix.setOnClickListener(view -> AdsManager.forceShowInterAds(this, () -> {
-            Toast.makeText(this, "ita force show done", Toast.LENGTH_SHORT).show();
+        binding.showItaFix.setOnClickListener(view -> AdsManager.forceShowInterAds(this, success -> {
+            Toast.makeText(this, "ita force show done: " + success, Toast.LENGTH_SHORT).show();
             return null;
         }));
 
-        binding.showRwa.setOnClickListener(view -> AdsManager.showRewardAds(this, true, new RewardAds.RewardCallback() {
+        binding.showRwa.setOnClickListener(view -> AdsManager.showRewardAds(this, true, true, new RewardAds.RewardCallback() {
             @Override
             public void onAdShowed() {
                 Toast.makeText(MainActivity.this, "start show ads", Toast.LENGTH_SHORT).show();
