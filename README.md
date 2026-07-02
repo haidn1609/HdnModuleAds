@@ -15,7 +15,7 @@ Add it in your settings.gradle.kts at the end of repositories:
 Add the dependency
 ```kotlin
 dependencies {
-	        implementation("com.github.haidn1609:HdnModuleAds:1.0.0")
+	        implementation("com.github.haidn1609:HdnModuleAds:1.0.5")
 	}
 ```
 ## Init
