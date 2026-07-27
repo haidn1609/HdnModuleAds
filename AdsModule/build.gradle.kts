@@ -48,7 +48,7 @@ dependencies {
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
 
-    implementation("com.google.android.gms:play-services-ads:24.1.0")
+    implementation("com.google.android.gms:play-services-ads:24.7.0")
     implementation("com.facebook.shimmer:shimmer:0.5.0")
     implementation("com.google.code.gson:gson:2.14.0")
 }
