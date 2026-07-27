@@ -207,6 +207,10 @@ object RewardAds {
                 callback.onAdShowed()
             }
 
+            override fun onAdClicked() {
+                AdsManager.onAdsLog(AdsLog("rwa", "", "adsClick", "show", null))
+            }
+
             override fun onAdFailedToShowFullScreenContent(adError: AdError) {
                 AdsManager.onAdsLog(AdsLog("rwa", "", "show", "show_failed", adError))
                 rewardedAd = null

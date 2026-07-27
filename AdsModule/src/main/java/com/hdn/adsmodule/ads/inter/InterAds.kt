@@ -231,6 +231,10 @@ object InterAds {
                 isShowing = true
             }
 
+            override fun onAdClicked() {
+                AdsManager.onAdsLog(AdsLog("ita", "", "adsClick", "show_ads_full", null))
+            }
+
             override fun onAdDismissedFullScreenContent() {
                 AdsManager.onAdsLog(AdsLog("ita", "", "show_ads_full", "show_dismiss", null))
                 isShowing = false

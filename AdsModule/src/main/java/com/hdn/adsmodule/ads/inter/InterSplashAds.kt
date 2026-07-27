@@ -214,6 +214,11 @@ object InterSplashAds {
                 startCallback?.invoke()
             }
 
+            override fun onAdClicked() {
+                super.onAdClicked()
+                AdsManager.onAdsLog(AdsLog("itsa", "", "adsClick", "show_ads_full", null))
+            }
+
             override fun onAdDismissedFullScreenContent() {
                 super.onAdDismissedFullScreenContent()
                 AdsManager.onAdsLog(AdsLog("itsa", "", "show_ads_full", "show_dismiss", null))

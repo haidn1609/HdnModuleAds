@@ -145,10 +145,18 @@ class NativeAdManager(
 
                 AdsManager.onAdsLog(
                     AdsLog(
-                        "nta_$key", adUnitId, "load", "load_success", null
+                        key, adUnitId, "load", "load_success", null
                     )
                 )
             }.withAdListener(object : AdListener() {
+
+                override fun onAdClicked() {
+                    AdsManager.onAdsLog(
+                        AdsLog(
+                            key, adUnitId, "adsClick", "show", null
+                        )
+                    )
+                }
 
                 override fun onAdFailedToLoad(
                     loadAdError: LoadAdError
@@ -156,7 +164,7 @@ class NativeAdManager(
 
                     AdsManager.onAdsLog(
                         AdsLog(
-                            "nta_$key", adUnitId, "load", "load_failed", loadAdError
+                            key, adUnitId, "load", "load_failed", loadAdError
                         )
                     )
 
@@ -186,7 +194,7 @@ class NativeAdManager(
 
         AdsManager.onAdsLog(
             AdsLog(
-                "nta_$key", "", "try_show_pending", "call_show_pending", null
+                key, "", "try_show_pending", "call_show_pending", null
             )
         )
 
@@ -194,7 +202,7 @@ class NativeAdManager(
 
             AdsManager.onAdsLog(
                 AdsLog(
-                    "nta_$key", "", "try_show_pending", "err_view_unavailable", null
+                    key, "", "try_show_pending", "err_view_unavailable", null
                 )
             )
 
@@ -208,7 +216,7 @@ class NativeAdManager(
 
             AdsManager.onAdsLog(
                 AdsLog(
-                    "nta_$key", "", "try_show_pending", "err_ad_null", null
+                    key, "", "try_show_pending", "err_ad_null", null
                 )
             )
 
@@ -221,7 +229,7 @@ class NativeAdManager(
 
         AdsManager.onAdsLog(
             AdsLog(
-                "nta_$key", "", "try_show_pending", "call_show", null
+                key, "", "try_show_pending", "call_show", null
             )
         )
 
@@ -350,7 +358,7 @@ class NativeAdManager(
 
             AdsManager.onAdsLog(
                 AdsLog(
-                    "nta_$key", "", "show", "err_activity_unavailable", null
+                    key, "", "show", "err_activity_unavailable", null
                 )
             )
 
@@ -360,7 +368,7 @@ class NativeAdManager(
 
         AdsManager.onAdsLog(
             AdsLog(
-                "nta_$key", "", "show", "start_show", null
+                key, "", "show", "start_show", null
             )
         )
 
@@ -437,7 +445,7 @@ class NativeAdManager(
 
                     AdsManager.onAdsLog(
                         AdsLog(
-                            "nta_$key", "", "ad_click", "close_click", null
+                            key, "", "ad_click", "close_click", null
                         )
                     )
 
@@ -450,7 +458,7 @@ class NativeAdManager(
 
             AdsManager.onAdsLog(
                 AdsLog(
-                    "nta_$key", "", "show", "show_done", null
+                    key, "", "show", "show_done", null
                 )
             )
         }

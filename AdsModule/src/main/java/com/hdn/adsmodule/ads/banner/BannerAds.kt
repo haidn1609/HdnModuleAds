@@ -236,6 +236,18 @@ object BannerAds {
                     hideLoading(loadingText, loadingOverlay)
                 }
 
+                override fun onAdClicked() {
+                    AdsManager.onAdsLog(
+                        AdsLog(
+                            if (bannerType == BannerType.NORMAL) "bna" else "bnca",
+                            adUnitId,
+                            "adsClick",
+                            "show",
+                            null
+                        )
+                    )
+                }
+
                 override fun onAdFailedToLoad(error: LoadAdError) {
                     if (bannerType == BannerType.NORMAL) {
                         isBannerLoaded = false

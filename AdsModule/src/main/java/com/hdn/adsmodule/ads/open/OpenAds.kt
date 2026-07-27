@@ -147,6 +147,10 @@ object OpenAds {
                         isOpenShowingAd = true
                     }
 
+                    override fun onAdClicked() {
+                        AdsManager.onAdsLog(AdsLog("opa" , "", "adsClick", "show",null))
+                    }
+
                     override fun onAdDismissedFullScreenContent() {
                         AdsManager.onAdsLog(AdsLog("opa" , "", "show", "show_dismiss",null))
                         isOpenShowingAd = false
