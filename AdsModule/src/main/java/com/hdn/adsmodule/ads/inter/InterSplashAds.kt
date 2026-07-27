@@ -218,7 +218,6 @@ object InterSplashAds {
                 super.onAdDismissedFullScreenContent()
                 AdsManager.onAdsLog(AdsLog("itsa", "", "show_ads_full", "show_dismiss", null))
                 mInterstitialAd = null
-                InterAds.startDelay()
                 if (dialogNativeFull.dialog != null && showDialog) {
                     dialogNativeFull.requireDialog().setOnDismissListener {
                         AdsManager.onAdsLog(
