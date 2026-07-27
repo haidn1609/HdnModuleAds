@@ -264,7 +264,7 @@ object RewardAds {
         if (loadingDialog?.isShowing == true) return
 
         loadingDialog = Dialog(activity).apply {
-            setContentView(R.layout.dialog_loading)
+            setContentView(R.layout.dialog_loading_reward)
             window?.setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
             setCancelable(false)
             show()
