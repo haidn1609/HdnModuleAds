@@ -70,7 +70,7 @@ public class MainActivity extends AppCompatActivity {
             return null;
         }));
 
-        binding.showRwa.setOnClickListener(view -> AdsManager.showRewardAds(this, true, true, new RewardAds.RewardCallback() {
+        binding.showRwa.setOnClickListener(view -> AdsManager.showRewardAds(this, true, true,false, new RewardAds.RewardCallback() {
             @Override
             public void onAdShowed() {
                 Toast.makeText(MainActivity.this, "start show ads", Toast.LENGTH_SHORT).show();

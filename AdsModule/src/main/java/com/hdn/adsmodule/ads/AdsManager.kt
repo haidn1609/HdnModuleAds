@@ -188,12 +188,13 @@ object AdsManager {
         activity: Activity,
         useInterFallback: Boolean = false,
         useWithoutVip: Boolean = false,
+        autoCache: Boolean = true,
         callback: RewardCallback
     ) {
         if (useInterFallback) {
-            RewardAds.showRewardWithFallbackInter(activity, useWithoutVip, callback)
+            RewardAds.showRewardWithFallbackInter(activity, useWithoutVip, autoCache, callback)
         } else {
-            RewardAds.show(activity, callback, useWithoutVip)
+            RewardAds.show(activity, callback, useWithoutVip, autoCache)
         }
     }
 
