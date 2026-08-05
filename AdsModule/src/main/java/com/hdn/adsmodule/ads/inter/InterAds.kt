@@ -1,10 +1,14 @@
 package com.hdn.adsmodule.ads.inter
 
 import android.app.Activity
+import android.app.Dialog
 import android.content.Context
+import android.graphics.Color
 import android.os.Handler
 import android.os.Looper
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.graphics.drawable.toDrawable
+import com.hdn.adsmodule.R
 
 import com.google.android.gms.ads.AdError
 import com.google.android.gms.ads.AdRequest
@@ -45,6 +49,7 @@ object InterAds {
     var isShowing: Boolean = false
     private var isCoolingDown: Boolean = false
     private var loadTimeAd: Long = 0
+    private var loadingDialog: Dialog? = null
     var interAdsTime = 45000L
     @JvmStatic
     @JvmOverloads
@@ -162,34 +167,63 @@ object InterAds {
     private val isAdsOverdue: Boolean
         get() = Date().time - loadTimeAd > 3600000 * 4
 
+    // forceShow = load-and-show: có ad thì show luôn, chưa có thì hiện loading dialog -> load -> show
     @JvmStatic
-    fun forceShowAdsBreak(activity: Activity, useWithoutVip: Boolean, callback: InterCallback?) {
+    @JvmOverloads
+    fun forceShowAdsBreak(
+        activity: Activity,
+        useWithoutVip: Boolean = false,
+        autoCache: Boolean = true,
+        callback: InterCallback?
+    ) {
         isCoolingDown = false
         AdsManager.onAdsLog(AdsLog("ita", "", "force_show", "call_show", null))
-        if (!isCanForceShowAds) {
-            AdsManager.onAdsLog(AdsLog("ita", "", "force_show", "err_cant_show", null))
-            initInterAds(context = activity, useWithoutVip = useWithoutVip)
+        if (!AdsController.canShowAds(useWithoutVip)) {
             callback?.invoke(false)
             return
         }
-
-        if (activity is AppCompatActivity) {
-            showAdsFull(activity, useWithoutVip, callback)
-        } else {
+        if (activity !is AppCompatActivity) {
             AdsManager.onAdsLog(AdsLog("ita", "", "force_show", "err_not_activity", null))
             callback?.invoke(false)
+            return
         }
+        // Có ad sẵn -> show luôn, khỏi loading
+        if (isCanForceShowAds) {
+            showAdsFull(activity, useWithoutVip, autoCache, callback)
+            return
+        }
+        // Đang load dở hoặc đang show -> không show chồng
+        if (isLoading || isShowing) {
+            AdsManager.onAdsLog(AdsLog("ita", "", "force_show", "err_busy", null))
+            callback?.invoke(false)
+            return
+        }
+        // Chưa có ad -> hiện loading dialog, load xong show luôn
+        showLoading(activity)
+        initInterAds(
+            context = activity,
+            isForceReload = true,
+            onLoadSuccess = {
+                dismissLoading()
+                if (isCanForceShowAds) {
+                    showAdsFull(activity, useWithoutVip, autoCache, callback)
+                } else {
+                    callback?.invoke(false)
+                }
+            },
+            onLoadError = {
+                dismissLoading()
+                callback?.invoke(false)
+            },
+            useWithoutVip = useWithoutVip
+        )
     }
-
-    @JvmStatic
-    fun forceShowAdsBreak(activity: Activity, callback: InterCallback?) =
-        forceShowAdsBreak(activity, false, callback)
 
     @JvmStatic
     fun showAdsBreak(activity: Activity?, useWithoutVip: Boolean, callback: InterCallback?) {
         AdsManager.onAdsLog(AdsLog("ita", "", "show", "call_show", null))
         if (isCanShowAds && activity is AppCompatActivity) {
-            showAdsFull(activity, useWithoutVip, callback)
+            showAdsFull(activity, useWithoutVip, callback = callback)
         } else {
             AdsManager.onAdsLog(AdsLog("ita", "", "show", "err_call_show", null))
             activity?.let { initInterAds(context = it, useWithoutVip = useWithoutVip) }
@@ -204,6 +238,7 @@ object InterAds {
     private fun showAdsFull(
         context: AppCompatActivity,
         useWithoutVip: Boolean,
+        autoCache: Boolean = true,
         callback: InterCallback?
     ) {
         if (!AdsController.canShowAds(useWithoutVip)) {
@@ -222,7 +257,7 @@ object InterAds {
                 AdsManager.onAdsLog(AdsLog("ita", "", "show_ads_full", "show_failed", adError))
                 mInterstitialAd = null
                 isShowing = false
-                initInterAds(context = context, useWithoutVip = useWithoutVip)
+                if (autoCache) initInterAds(context = context, useWithoutVip = useWithoutVip)
                 callback?.invoke(false)
             }
 
@@ -240,7 +275,7 @@ object InterAds {
                 isShowing = false
                 mInterstitialAd = null
                 startDelay()
-                initInterAds(context = context, useWithoutVip = useWithoutVip)
+                if (autoCache) initInterAds(context = context, useWithoutVip = useWithoutVip)
                 callback?.invoke(true)
             }
         }
@@ -257,6 +292,24 @@ object InterAds {
         isCoolingDown = true
         handler.removeCallbacks(resetCooldownRunnable)
         handler.postDelayed(resetCooldownRunnable, interAdsTime)
+    }
+
+    private fun showLoading(activity: Activity) {
+        if (loadingDialog?.isShowing == true) return
+        loadingDialog = Dialog(activity, R.style.AppTheme_FullScreenDialog).apply {
+            setContentView(R.layout.dialog_loading_inter)
+            window?.setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
+            setCancelable(false)
+            show()
+        }
+    }
+
+    private fun dismissLoading() {
+        try {
+            loadingDialog?.dismiss()
+        } catch (_: Exception) {
+        }
+        loadingDialog = null
     }
 
     private fun clear() {

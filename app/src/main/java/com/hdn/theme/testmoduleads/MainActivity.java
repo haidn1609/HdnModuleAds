@@ -65,7 +65,7 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(this, "ita show done: " + success, Toast.LENGTH_SHORT).show();
             return null;
         }));
-        binding.showItaFix.setOnClickListener(view -> AdsManager.forceShowInterAds(this, success -> {
+        binding.showItaFix.setOnClickListener(view -> AdsManager.forceShowInterAds(this,false, false, success -> {
             Toast.makeText(this, "ita force show done: " + success, Toast.LENGTH_SHORT).show();
             return null;
         }));

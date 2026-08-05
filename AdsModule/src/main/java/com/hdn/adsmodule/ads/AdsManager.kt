@@ -169,18 +169,17 @@ object AdsManager {
     fun showInterAds(activity: AppCompatActivity, callback: InterCallback?) =
         showInterAds(activity, false, callback)
 
+    // forceShow = load-and-show kèm loading dialog (dialog_loading_inter)
     @JvmStatic
+    @JvmOverloads
     fun forceShowInterAds(
         activity: AppCompatActivity,
-        useWithoutVip: Boolean,
+        useWithoutVip: Boolean = false,
+        autoCache: Boolean = true,
         callback: InterCallback?
     ) {
-        InterAds.forceShowAdsBreak(activity, useWithoutVip, callback)
+        InterAds.forceShowAdsBreak(activity, useWithoutVip, autoCache, callback)
     }
-
-    @JvmStatic
-    fun forceShowInterAds(activity: AppCompatActivity, callback: InterCallback?) =
-        forceShowInterAds(activity, false, callback)
 
     //    reward
     @JvmStatic
