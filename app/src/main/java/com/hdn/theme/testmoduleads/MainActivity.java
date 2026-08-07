@@ -132,6 +132,10 @@ public class MainActivity extends AppCompatActivity {
         binding.showNta1.setOnClickListener(view -> AdsManager.loadAndShowNative(this, "native_home", R.layout.template_native_media, binding.adFrame, true, 1));
         binding.showNta2.setOnClickListener(view -> AdsManager.loadAndShowNative(this, "native_home", R.layout.template_native_no_media, binding.adFrame, true, 0));
         binding.showNtca.setOnClickListener(view -> AdsManager.loadAndShowNative(this, "native_collapse", R.layout.template_native_collapse, binding.adFrame, true, 1));
+
+        // nta3/nta4 -> mở ActivityNativeFull (1 = hiện Open Store, 2 = hiện Close)
+        binding.showNta3.setOnClickListener(view -> ActivityNativeFull.start(this, 1));
+        binding.showNta4.setOnClickListener(view -> ActivityNativeFull.start(this, 2));
     }
 
 }

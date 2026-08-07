@@ -32,6 +32,11 @@
         <activity
             android:name="com.hdn.adsmodule.ads.open.Overlay"
             android:exported="false"/>
+
+        <activity
+            android:name=".ActivityNativeFull"
+            android:exported="false"
+            android:theme="@style/NativeFullActivityTheme"/>
     </application>
 
 </manifest>
