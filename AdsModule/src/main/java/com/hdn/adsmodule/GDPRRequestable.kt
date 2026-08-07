@@ -63,17 +63,17 @@ class GDPRRequestable(private val context: Activity) {
             { consentForm ->
                 Companion.consentForm = consentForm
                 if (consentInformation!!.consentStatus == ConsentInformation.ConsentStatus.REQUIRED) {
-                    AdsManager.onAdsLog(AdsLog("gdpr","" , "show_gdpr", "", null))
+                    AdsManager.onAdsLog(AdsLog(AdsLog.Type.GDPR,"" , AdsLog.Action.SHOW_GDPR, "", null))
                     Companion.consentForm!!.show(context) {
                         if (consentInformation!!.consentStatus == ConsentInformation.ConsentStatus.OBTAINED) {
                             onRequestGDPRCompleted!!.onRequestGDPRCompleted(null)
-                            AdsManager.onAdsLog(AdsLog("gdpr","" , "show_gdpr", "show_done", null))
+                            AdsManager.onAdsLog(AdsLog(AdsLog.Type.GDPR,"" , AdsLog.Action.SHOW_GDPR, AdsLog.Mess.SHOW_DONE, null))
                         }
                         //  loadForm();
                     }
                 } else if (consentInformation!!.consentStatus == ConsentInformation.ConsentStatus.OBTAINED) {
                     onRequestGDPRCompleted!!.onRequestGDPRCompleted(null)
-                    AdsManager.onAdsLog(AdsLog("gdpr","" , "show_gdpr", "show_done2", null))
+                    AdsManager.onAdsLog(AdsLog(AdsLog.Type.GDPR,"" , AdsLog.Action.SHOW_GDPR, AdsLog.Mess.SHOW_DONE2, null))
                 }
             },
             { formError -> onRequestGDPRCompleted!!.onRequestGDPRCompleted(formError) })

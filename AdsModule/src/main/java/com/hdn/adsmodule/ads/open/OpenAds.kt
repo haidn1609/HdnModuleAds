@@ -73,14 +73,14 @@ object OpenAds {
             callback?.invoke()
             return
         }
-        AdsManager.onAdsLog(AdsLog("opa", ids[index], "load", "start_load", null))
+        AdsManager.onAdsLog(AdsLog(AdsLog.Type.OPEN, ids[index], AdsLog.Action.LOAD, AdsLog.Mess.START_LOAD, null))
         AppOpenAd.load(
             context,
             ids[index],
             getAdRequest(),
             object : AppOpenAd.AppOpenAdLoadCallback() {
                 override fun onAdLoaded(ad: AppOpenAd) {
-                    AdsManager.onAdsLog(AdsLog("opa", ids[index], "load", "load_success", null))
+                    AdsManager.onAdsLog(AdsLog(AdsLog.Type.OPEN, ids[index], AdsLog.Action.LOAD, AdsLog.Mess.LOAD_SUCCESS, null))
                     appOpenAd = ad
                     appOpenAd?.setOnPaidEventListener { adValue ->
                         AdsManager.onAdsPair(
@@ -95,7 +95,7 @@ object OpenAds {
                 }
 
                 override fun onAdFailedToLoad(loadAdError: LoadAdError) {
-                    AdsManager.onAdsLog(AdsLog("opa", ids[index], "load", "start_failed", loadAdError))
+                    AdsManager.onAdsLog(AdsLog(AdsLog.Type.OPEN, ids[index], AdsLog.Action.LOAD, AdsLog.Mess.START_FAILED, loadAdError))
                     loadOpenAdByIndex(context, ids, index + 1, callback)
                 }
             }
@@ -132,27 +132,27 @@ object OpenAds {
             initOpenAds(context) {}
             return
         }
-        AdsManager.onAdsLog(AdsLog("opa" , "", "show", "call_show",null))
+        AdsManager.onAdsLog(AdsLog(AdsLog.Type.OPEN , "", AdsLog.Action.SHOW, AdsLog.Mess.CALL_SHOW,null))
         if (flagQC == 1) {
             if (isCanShowOpenAds()) {
                 appOpenAd?.fullScreenContentCallback = object : FullScreenContentCallback() {
                     override fun onAdFailedToShowFullScreenContent(adError: AdError) {
-                        AdsManager.onAdsLog(AdsLog("opa" , "", "show", "show_failed",adError))
+                        AdsManager.onAdsLog(AdsLog(AdsLog.Type.OPEN , "", AdsLog.Action.SHOW, AdsLog.Mess.SHOW_FAILED,adError))
                         appOpenAd = null
                         callback?.invoke()
                     }
 
                     override fun onAdShowedFullScreenContent() {
-                        AdsManager.onAdsLog(AdsLog("opa" , "", "show", "show_success",null))
+                        AdsManager.onAdsLog(AdsLog(AdsLog.Type.OPEN , "", AdsLog.Action.SHOW, AdsLog.Mess.SHOW_SUCCESS,null))
                         isOpenShowingAd = true
                     }
 
                     override fun onAdClicked() {
-                        AdsManager.onAdsLog(AdsLog("opa" , "", "adsClick", "show",null))
+                        AdsManager.onAdsLog(AdsLog(AdsLog.Type.OPEN , "", AdsLog.Action.ADS_CLICK, AdsLog.Action.SHOW,null))
                     }
 
                     override fun onAdDismissedFullScreenContent() {
-                        AdsManager.onAdsLog(AdsLog("opa" , "", "show", "show_dismiss",null))
+                        AdsManager.onAdsLog(AdsLog(AdsLog.Type.OPEN , "", AdsLog.Action.SHOW, AdsLog.Mess.SHOW_DISMISS,null))
                         isOpenShowingAd = false
                         appOpenAd = null
                         initOpenAds(context) {}
@@ -161,14 +161,14 @@ object OpenAds {
                         Overlay.finish()
                     }
                 }
-                AdsManager.onAdsLog(AdsLog("opa" , "", "show", "start_show",null))
+                AdsManager.onAdsLog(AdsLog(AdsLog.Type.OPEN , "", AdsLog.Action.SHOW, AdsLog.Mess.START_SHOW,null))
                 appOpenAd?.show(context)
             } else {
-                AdsManager.onAdsLog(AdsLog("opa" , "", "show", "err_cant_show",null))
+                AdsManager.onAdsLog(AdsLog(AdsLog.Type.OPEN , "", AdsLog.Action.SHOW, AdsLog.Mess.ERR_CANT_SHOW,null))
                 callback?.invoke()
             }
         } else {
-            AdsManager.onAdsLog(AdsLog("opa" , "", "show", "err_delay",null))
+            AdsManager.onAdsLog(AdsLog(AdsLog.Type.OPEN , "", AdsLog.Action.SHOW, AdsLog.Mess.ERR_DELAY,null))
             callback?.invoke()
         }
     }

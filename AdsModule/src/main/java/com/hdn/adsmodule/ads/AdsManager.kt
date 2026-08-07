@@ -23,12 +23,21 @@ object AdsManager {
 
     @JvmStatic
     var adsLog: ((AdsLog) -> Unit)? = null
+
+    // Bắn trạng thái loading (load-and-show) ra ngoài: true = hiện loading, false = ẩn. App tự show UI.
+    @JvmStatic
+    var adsLoading: ((Boolean) -> Unit)? = null
+
     fun onAdsPair(adValue: AdValue) {
         adsPair?.invoke(adValue)
     }
 
     fun onAdsLog(adValue: AdsLog) {
         adsLog?.invoke(adValue)
+    }
+
+    fun onAdsLoading(isLoading: Boolean) {
+        adsLoading?.invoke(isLoading)
     }
 
     //config
@@ -45,6 +54,12 @@ object AdsManager {
     @JvmStatic
     fun setVip(isVip: Boolean) {
         AdsController.isVip = isVip
+    }
+
+    // Thời gian cooldown giữa 2 lần show inter (ms)
+    @JvmStatic
+    fun setInterAdsTime(timeMillis: Long) {
+        InterAds.setInterAdsTime(timeMillis)
     }
 
     //init
@@ -157,43 +172,45 @@ object AdsManager {
     }
 
     @JvmStatic
+    @JvmOverloads
     fun showInterAds(
         activity: AppCompatActivity,
-        useWithoutVip: Boolean,
+        useWithoutVip: Boolean = false,
+        fakeLoadingTime: Long = 0L,
         callback: InterCallback?
     ) {
-        InterAds.showAdsBreak(activity, useWithoutVip, callback)
+        InterAds.showAdsBreak(activity, useWithoutVip, fakeLoadingTime, callback)
     }
 
-    @JvmStatic
-    fun showInterAds(activity: AppCompatActivity, callback: InterCallback?) =
-        showInterAds(activity, false, callback)
-
-    // forceShow = load-and-show kèm loading dialog (dialog_loading_inter)
+    // forceShow = load-and-show. Loading bắn ra ngoài qua AdLoading.onLoading.
+    // fakeLoadingTime>0 (ms) để fake thời gian loading trước khi show.
     @JvmStatic
     @JvmOverloads
     fun forceShowInterAds(
         activity: AppCompatActivity,
         useWithoutVip: Boolean = false,
         autoCache: Boolean = true,
+        fakeLoadingTime: Long = 0L,
         callback: InterCallback?
     ) {
-        InterAds.forceShowAdsBreak(activity, useWithoutVip, autoCache, callback)
+        InterAds.forceShowAdsBreak(activity, useWithoutVip, autoCache, fakeLoadingTime, callback)
     }
 
     //    reward
     @JvmStatic
+    @JvmOverloads
     fun showRewardAds(
         activity: Activity,
         useInterFallback: Boolean = false,
         useWithoutVip: Boolean = false,
         autoCache: Boolean = true,
+        fakeLoadingTime: Long = 0L,
         callback: RewardCallback
     ) {
         if (useInterFallback) {
-            RewardAds.showRewardWithFallbackInter(activity, useWithoutVip, autoCache, callback)
+            RewardAds.showRewardWithFallbackInter(activity, useWithoutVip, autoCache, fakeLoadingTime, callback)
         } else {
-            RewardAds.show(activity, callback, useWithoutVip, autoCache)
+            RewardAds.show(activity, callback, useWithoutVip, autoCache, fakeLoadingTime)
         }
     }
 

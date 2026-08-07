@@ -1,14 +1,10 @@
 package com.hdn.adsmodule.ads.inter
 
 import android.app.Activity
-import android.app.Dialog
 import android.content.Context
-import android.graphics.Color
 import android.os.Handler
 import android.os.Looper
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.graphics.drawable.toDrawable
-import com.hdn.adsmodule.R
 
 import com.google.android.gms.ads.AdError
 import com.google.android.gms.ads.AdRequest
@@ -49,8 +45,15 @@ object InterAds {
     var isShowing: Boolean = false
     private var isCoolingDown: Boolean = false
     private var loadTimeAd: Long = 0
-    private var loadingDialog: Dialog? = null
     var interAdsTime = 45000L
+        private set
+
+    // Cấu hình thời gian cooldown giữa 2 lần show inter (ms)
+    @JvmStatic
+    fun setInterAdsTime(timeMillis: Long) {
+        interAdsTime = timeMillis
+    }
+
     @JvmStatic
     @JvmOverloads
     fun initInterAds(
@@ -105,14 +108,14 @@ object InterAds {
             onLoadError?.invoke()
             return
         }
-        AdsManager.onAdsLog(AdsLog("ita", ids[index], "load", "start_load", null))
+        AdsManager.onAdsLog(AdsLog(AdsLog.Type.INTER, ids[index], AdsLog.Action.LOAD, AdsLog.Mess.START_LOAD, null))
         InterstitialAd.load(
             context,
             ids[index],
             adRequest,
             object : InterstitialAdLoadCallback() {
                 override fun onAdLoaded(interstitialAd: InterstitialAd) {
-                    AdsManager.onAdsLog(AdsLog("ita", ids[index], "load", "load_success", null))
+                    AdsManager.onAdsLog(AdsLog(AdsLog.Type.INTER, ids[index], AdsLog.Action.LOAD, AdsLog.Mess.LOAD_SUCCESS, null))
                     mInterstitialAd = interstitialAd
                     mInterstitialAd?.setOnPaidEventListener { adValue ->
                         AdsManager.onAdsPair(
@@ -128,7 +131,7 @@ object InterAds {
                 }
 
                 override fun onAdFailedToLoad(loadAdError: LoadAdError) {
-                    AdsManager.onAdsLog(AdsLog("ita", ids[index], "load", "load_failed", loadAdError))
+                    AdsManager.onAdsLog(AdsLog(AdsLog.Type.INTER, ids[index], AdsLog.Action.LOAD, AdsLog.Mess.LOAD_FAILED, loadAdError))
                     loadInterstitialByIndex(
                         context = context,
                         ids = ids,
@@ -167,44 +170,72 @@ object InterAds {
     private val isAdsOverdue: Boolean
         get() = Date().time - loadTimeAd > 3600000 * 4
 
-    // forceShow = load-and-show: có ad thì show luôn, chưa có thì hiện loading dialog -> load -> show
+    // forceShow = load-and-show. Loading được bắn ra ngoài qua AdLoading (app tự show UI).
+    // fakeLoadingTime=0: bắn loading theo thời gian load thật (như cũ).
+    // fakeLoadingTime>0: bắn loading, chờ đúng fake time (tranh thủ load) rồi mới show nếu ad đã sẵn sàng.
     @JvmStatic
     @JvmOverloads
     fun forceShowAdsBreak(
         activity: Activity,
         useWithoutVip: Boolean = false,
         autoCache: Boolean = true,
+        fakeLoadingTime: Long = 0L,
         callback: InterCallback?
     ) {
         isCoolingDown = false
-        AdsManager.onAdsLog(AdsLog("ita", "", "force_show", "call_show", null))
+        AdsManager.onAdsLog(AdsLog(AdsLog.Type.INTER, "", AdsLog.Action.FORCE_SHOW, AdsLog.Mess.CALL_SHOW, null))
         if (!AdsController.canShowAds(useWithoutVip)) {
             callback?.invoke(false)
             return
         }
         if (activity !is AppCompatActivity) {
-            AdsManager.onAdsLog(AdsLog("ita", "", "force_show", "err_not_activity", null))
+            AdsManager.onAdsLog(AdsLog(AdsLog.Type.INTER, "", AdsLog.Action.FORCE_SHOW, AdsLog.Mess.ERR_NOT_ACTIVITY, null))
             callback?.invoke(false)
             return
         }
+        // Đang show -> không show chồng
+        if (isShowing) {
+            AdsManager.onAdsLog(AdsLog(AdsLog.Type.INTER, "", AdsLog.Action.FORCE_SHOW, AdsLog.Mess.ERR_BUSY, null))
+            callback?.invoke(false)
+            return
+        }
+
+        // Fake loading: bắn loading -> chờ fake time -> show nếu ad sẵn sàng
+        if (fakeLoadingTime > 0) {
+            AdsManager.onAdsLoading(true)
+            // chưa có ad thì tranh thủ load trong lúc fake (initInterAds tự chặn nếu đang load)
+            if (!isCanForceShowAds) {
+                initInterAds(context = activity, isForceReload = true, useWithoutVip = useWithoutVip)
+            }
+            handler.postDelayed({
+                AdsManager.onAdsLoading(false)
+                if (isCanForceShowAds) {
+                    showAdsFull(activity, useWithoutVip, autoCache, callback)
+                } else {
+                    callback?.invoke(false)
+                }
+            }, fakeLoadingTime)
+            return
+        }
+
         // Có ad sẵn -> show luôn, khỏi loading
         if (isCanForceShowAds) {
             showAdsFull(activity, useWithoutVip, autoCache, callback)
             return
         }
-        // Đang load dở hoặc đang show -> không show chồng
-        if (isLoading || isShowing) {
-            AdsManager.onAdsLog(AdsLog("ita", "", "force_show", "err_busy", null))
+        // Đang load dở -> không show chồng
+        if (isLoading) {
+            AdsManager.onAdsLog(AdsLog(AdsLog.Type.INTER, "", AdsLog.Action.FORCE_SHOW, AdsLog.Mess.ERR_BUSY, null))
             callback?.invoke(false)
             return
         }
-        // Chưa có ad -> hiện loading dialog, load xong show luôn
-        showLoading(activity)
+        // Chưa có ad -> bắn loading, load xong show luôn
+        AdsManager.onAdsLoading(true)
         initInterAds(
             context = activity,
             isForceReload = true,
             onLoadSuccess = {
-                dismissLoading()
+                AdsManager.onAdsLoading(false)
                 if (isCanForceShowAds) {
                     showAdsFull(activity, useWithoutVip, autoCache, callback)
                 } else {
@@ -212,7 +243,7 @@ object InterAds {
                 }
             },
             onLoadError = {
-                dismissLoading()
+                AdsManager.onAdsLoading(false)
                 callback?.invoke(false)
             },
             useWithoutVip = useWithoutVip
@@ -220,20 +251,38 @@ object InterAds {
     }
 
     @JvmStatic
-    fun showAdsBreak(activity: Activity?, useWithoutVip: Boolean, callback: InterCallback?) {
-        AdsManager.onAdsLog(AdsLog("ita", "", "show", "call_show", null))
+    @JvmOverloads
+    fun showAdsBreak(
+        activity: Activity?,
+        useWithoutVip: Boolean = false,
+        fakeLoadingTime: Long = 0L,
+        callback: InterCallback?
+    ) {
+        AdsManager.onAdsLog(AdsLog(AdsLog.Type.INTER, "", AdsLog.Action.SHOW, AdsLog.Mess.CALL_SHOW, null))
+
+        // Fake loading: bắn loading -> chờ fake time (tranh thủ load) -> show nếu ad sẵn sàng (vẫn tôn trọng cooldown)
+        if (fakeLoadingTime > 0 && activity is AppCompatActivity) {
+            AdsManager.onAdsLoading(true)
+            if (!isCanShowAds) initInterAds(context = activity, useWithoutVip = useWithoutVip)
+            handler.postDelayed({
+                AdsManager.onAdsLoading(false)
+                if (isCanShowAds) {
+                    showAdsFull(activity, useWithoutVip, callback = callback)
+                } else {
+                    callback?.invoke(false)
+                }
+            }, fakeLoadingTime)
+            return
+        }
+
         if (isCanShowAds && activity is AppCompatActivity) {
             showAdsFull(activity, useWithoutVip, callback = callback)
         } else {
-            AdsManager.onAdsLog(AdsLog("ita", "", "show", "err_call_show", null))
+            AdsManager.onAdsLog(AdsLog(AdsLog.Type.INTER, "", AdsLog.Action.SHOW, AdsLog.Mess.ERR_CALL_SHOW, null))
             activity?.let { initInterAds(context = it, useWithoutVip = useWithoutVip) }
             callback?.invoke(false)
         }
     }
-
-    @JvmStatic
-    fun showAdsBreak(activity: Activity?, callback: InterCallback?) =
-        showAdsBreak(activity, false, callback)
 
     private fun showAdsFull(
         context: AppCompatActivity,
@@ -247,14 +296,14 @@ object InterAds {
         }
 
         val currentAd = mInterstitialAd ?: run {
-            AdsManager.onAdsLog(AdsLog("ita", "", "show_ads_full", "show_failed_ad_null", null))
+            AdsManager.onAdsLog(AdsLog(AdsLog.Type.INTER, "", AdsLog.Action.SHOW_ADS_FULL, AdsLog.Mess.SHOW_FAILED_AD_NULL, null))
             callback?.invoke(false)
             return
         }
 
         currentAd.fullScreenContentCallback = object : FullScreenContentCallback() {
             override fun onAdFailedToShowFullScreenContent(adError: AdError) {
-                AdsManager.onAdsLog(AdsLog("ita", "", "show_ads_full", "show_failed", adError))
+                AdsManager.onAdsLog(AdsLog(AdsLog.Type.INTER, "", AdsLog.Action.SHOW_ADS_FULL, AdsLog.Mess.SHOW_FAILED, adError))
                 mInterstitialAd = null
                 isShowing = false
                 if (autoCache) initInterAds(context = context, useWithoutVip = useWithoutVip)
@@ -262,16 +311,16 @@ object InterAds {
             }
 
             override fun onAdShowedFullScreenContent() {
-                AdsManager.onAdsLog(AdsLog("ita", "", "show_ads_full", "show_success", null))
+                AdsManager.onAdsLog(AdsLog(AdsLog.Type.INTER, "", AdsLog.Action.SHOW_ADS_FULL, AdsLog.Mess.SHOW_SUCCESS, null))
                 isShowing = true
             }
 
             override fun onAdClicked() {
-                AdsManager.onAdsLog(AdsLog("ita", "", "adsClick", "show_ads_full", null))
+                AdsManager.onAdsLog(AdsLog(AdsLog.Type.INTER, "", AdsLog.Action.ADS_CLICK, AdsLog.Action.SHOW_ADS_FULL, null))
             }
 
             override fun onAdDismissedFullScreenContent() {
-                AdsManager.onAdsLog(AdsLog("ita", "", "show_ads_full", "show_dismiss", null))
+                AdsManager.onAdsLog(AdsLog(AdsLog.Type.INTER, "", AdsLog.Action.SHOW_ADS_FULL, AdsLog.Mess.SHOW_DISMISS, null))
                 isShowing = false
                 mInterstitialAd = null
                 startDelay()
@@ -292,24 +341,6 @@ object InterAds {
         isCoolingDown = true
         handler.removeCallbacks(resetCooldownRunnable)
         handler.postDelayed(resetCooldownRunnable, interAdsTime)
-    }
-
-    private fun showLoading(activity: Activity) {
-        if (loadingDialog?.isShowing == true) return
-        loadingDialog = Dialog(activity, R.style.AppTheme_FullScreenDialog).apply {
-            setContentView(R.layout.dialog_loading_inter)
-            window?.setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
-            setCancelable(false)
-            show()
-        }
-    }
-
-    private fun dismissLoading() {
-        try {
-            loadingDialog?.dismiss()
-        } catch (_: Exception) {
-        }
-        loadingDialog = null
     }
 
     private fun clear() {

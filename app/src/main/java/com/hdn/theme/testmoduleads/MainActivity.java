@@ -1,7 +1,10 @@
 package com.hdn.theme.testmoduleads;
 
+import android.app.Dialog;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.ViewGroup;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -20,6 +23,7 @@ import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
     private ActivityMainBinding binding;
+    private Dialog loadingDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,6 +50,32 @@ public class MainActivity extends AppCompatActivity {
             Log.e("Ads_log", adValue.toString());
             return null;
         });
+        // Module bắn loading ra ngoài -> app tự show/dismiss UI của mình
+        AdsManager.setAdsLoading(show -> {
+            if (show) showLoading();
+            else dismissLoading();
+            return null;
+        });
+    }
+
+    private void showLoading() {
+        if (loadingDialog != null && loadingDialog.isShowing()) return;
+        loadingDialog = new Dialog(this);
+        loadingDialog.setContentView(R.layout.dialog_loading);
+        if (loadingDialog.getWindow() != null) {
+            loadingDialog.getWindow().setBackgroundDrawable(new ColorDrawable(0x00000000));
+            loadingDialog.getWindow().setLayout(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+        }
+        loadingDialog.setCancelable(false);
+        loadingDialog.show();
+    }
+
+    private void dismissLoading() {
+        if (loadingDialog != null) {
+            loadingDialog.dismiss();
+            loadingDialog = null;
+        }
     }
 
     private void initEvent() {
@@ -61,16 +91,16 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(this, "itsa start show done", Toast.LENGTH_SHORT).show();
             return null;
         }));
-        binding.showIta.setOnClickListener(view -> AdsManager.showInterAds(this, success -> {
+        binding.showIta.setOnClickListener(view -> AdsManager.showInterAds(this, false, 1500L, success -> {
             Toast.makeText(this, "ita show done: " + success, Toast.LENGTH_SHORT).show();
             return null;
         }));
-        binding.showItaFix.setOnClickListener(view -> AdsManager.forceShowInterAds(this,false, false, success -> {
+        binding.showItaFix.setOnClickListener(view -> AdsManager.forceShowInterAds(this, false, false, 1500L, success -> {
             Toast.makeText(this, "ita force show done: " + success, Toast.LENGTH_SHORT).show();
             return null;
         }));
 
-        binding.showRwa.setOnClickListener(view -> AdsManager.showRewardAds(this, true, true,false, new RewardAds.RewardCallback() {
+        binding.showRwa.setOnClickListener(view -> AdsManager.showRewardAds(this, true, true, false, 1500L, new RewardAds.RewardCallback() {
             @Override
             public void onAdShowed() {
                 Toast.makeText(MainActivity.this, "start show ads", Toast.LENGTH_SHORT).show();
@@ -103,4 +133,5 @@ public class MainActivity extends AppCompatActivity {
         binding.showNta2.setOnClickListener(view -> AdsManager.loadAndShowNative(this, "native_home", R.layout.template_native_no_media, binding.adFrame, true, 0));
         binding.showNtca.setOnClickListener(view -> AdsManager.loadAndShowNative(this, "native_collapse", R.layout.template_native_collapse, binding.adFrame, true, 1));
     }
+
 }

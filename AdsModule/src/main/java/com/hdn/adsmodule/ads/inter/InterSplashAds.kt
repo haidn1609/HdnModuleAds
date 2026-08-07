@@ -79,7 +79,7 @@ object InterSplashAds {
             return
         }
         val adUnitId = ids[index]
-        AdsManager.onAdsLog(AdsLog("itsa", adUnitId, "load", "start_load", null))
+        AdsManager.onAdsLog(AdsLog(AdsLog.Type.INTER_SPLASH, adUnitId, AdsLog.Action.LOAD, AdsLog.Mess.START_LOAD, null))
         InterstitialAd.load(
             context,
             adUnitId,
@@ -87,7 +87,7 @@ object InterSplashAds {
             object : InterstitialAdLoadCallback() {
                 override fun onAdLoaded(interstitialAd: InterstitialAd) {
                     super.onAdLoaded(interstitialAd)
-                    AdsManager.onAdsLog(AdsLog("itsa", adUnitId, "load", "load_success", null))
+                    AdsManager.onAdsLog(AdsLog(AdsLog.Type.INTER_SPLASH, adUnitId, AdsLog.Action.LOAD, AdsLog.Mess.LOAD_SUCCESS, null))
                     mInterstitialAd = interstitialAd
                     isLoading = false
                     loadTimeAd = System.currentTimeMillis()
@@ -106,10 +106,10 @@ object InterSplashAds {
                     super.onAdFailedToLoad(loadAdError)
                     AdsManager.onAdsLog(
                         AdsLog(
-                            "itsa",
+                            AdsLog.Type.INTER_SPLASH,
                             adUnitId,
-                            "load",
-                            "load_failed",
+                            AdsLog.Action.LOAD,
+                            AdsLog.Mess.LOAD_FAILED,
                             loadAdError
                         )
                     )
@@ -155,10 +155,10 @@ object InterSplashAds {
             return
         }
 
-        AdsManager.onAdsLog(AdsLog("itsa", "", "show", "call_show", null))
+        AdsManager.onAdsLog(AdsLog(AdsLog.Type.INTER_SPLASH, "", AdsLog.Action.SHOW, AdsLog.Mess.CALL_SHOW, null))
 
         if (!isCanShowAds) {
-            AdsManager.onAdsLog(AdsLog("itsa", "", "show", "cant_show_vip", null))
+            AdsManager.onAdsLog(AdsLog(AdsLog.Type.INTER_SPLASH, "", AdsLog.Action.SHOW, AdsLog.Mess.CANT_SHOW_VIP, null))
             doneCallBack?.invoke()
             return
         }
@@ -181,7 +181,7 @@ object InterSplashAds {
             )
 
         } catch (_: Exception) {
-            AdsManager.onAdsLog(AdsLog("itsa", "", "show", "err_call_show", null))
+            AdsManager.onAdsLog(AdsLog(AdsLog.Type.INTER_SPLASH, "", AdsLog.Action.SHOW, AdsLog.Mess.ERR_CALL_SHOW, null))
             doneCallBack?.invoke()
         }
     }
@@ -195,7 +195,7 @@ object InterSplashAds {
         doneCallBack: Callback?
     ) {
         val currentAd = mInterstitialAd ?: run {
-            AdsManager.onAdsLog(AdsLog("itsa", "", "show_ads_full", "show_failed_ad_null", null))
+            AdsManager.onAdsLog(AdsLog(AdsLog.Type.INTER_SPLASH, "", AdsLog.Action.SHOW_ADS_FULL, AdsLog.Mess.SHOW_FAILED_AD_NULL, null))
             doneCallBack?.invoke()
             return
         }
@@ -203,33 +203,33 @@ object InterSplashAds {
         currentAd.fullScreenContentCallback = object : FullScreenContentCallback() {
             override fun onAdFailedToShowFullScreenContent(adError: AdError) {
                 super.onAdFailedToShowFullScreenContent(adError)
-                AdsManager.onAdsLog(AdsLog("itsa", "", "show_ads_full", "show_failed", adError))
+                AdsManager.onAdsLog(AdsLog(AdsLog.Type.INTER_SPLASH, "", AdsLog.Action.SHOW_ADS_FULL, AdsLog.Mess.SHOW_FAILED, adError))
                 mInterstitialAd = null
                 doneCallBack?.invoke()
             }
 
             override fun onAdShowedFullScreenContent() {
                 super.onAdShowedFullScreenContent()
-                AdsManager.onAdsLog(AdsLog("itsa", "", "show_ads_full", "show_success", null))
+                AdsManager.onAdsLog(AdsLog(AdsLog.Type.INTER_SPLASH, "", AdsLog.Action.SHOW_ADS_FULL, AdsLog.Mess.SHOW_SUCCESS, null))
                 startCallback?.invoke()
             }
 
             override fun onAdClicked() {
                 super.onAdClicked()
-                AdsManager.onAdsLog(AdsLog("itsa", "", "adsClick", "show_ads_full", null))
+                AdsManager.onAdsLog(AdsLog(AdsLog.Type.INTER_SPLASH, "", AdsLog.Action.ADS_CLICK, AdsLog.Action.SHOW_ADS_FULL, null))
             }
 
             override fun onAdDismissedFullScreenContent() {
                 super.onAdDismissedFullScreenContent()
-                AdsManager.onAdsLog(AdsLog("itsa", "", "show_ads_full", "show_dismiss", null))
+                AdsManager.onAdsLog(AdsLog(AdsLog.Type.INTER_SPLASH, "", AdsLog.Action.SHOW_ADS_FULL, AdsLog.Mess.SHOW_DISMISS, null))
                 mInterstitialAd = null
                 if (dialogNativeFull.dialog != null && showDialog) {
                     dialogNativeFull.requireDialog().setOnDismissListener {
                         AdsManager.onAdsLog(
                             AdsLog(
-                                "itsa",
+                                AdsLog.Type.INTER_SPLASH,
                                 "",
-                                "show_dialog_ads",
+                                AdsLog.Action.SHOW_DIALOG_ADS,
                                 "dialog_dismiss",
                                 null
                             )
@@ -245,7 +245,7 @@ object InterSplashAds {
         }
         if (showDialog) {
             Handler(Looper.getMainLooper()).postDelayed({
-                AdsManager.onAdsLog(AdsLog("itsa", "", "show_dialog_ads", "call_show", null))
+                AdsManager.onAdsLog(AdsLog(AdsLog.Type.INTER_SPLASH, "", AdsLog.Action.SHOW_DIALOG_ADS, AdsLog.Mess.CALL_SHOW, null))
                 dialogNativeFull.showAllowingStateLoss(
                     context.supportFragmentManager,
                     "FullScreenDialog"

@@ -145,7 +145,7 @@ class NativeAdManager(
 
                 AdsManager.onAdsLog(
                     AdsLog(
-                        key, adUnitId, "load", "load_success", null
+                        key, adUnitId, AdsLog.Action.LOAD, AdsLog.Mess.LOAD_SUCCESS, null
                     )
                 )
             }.withAdListener(object : AdListener() {
@@ -153,7 +153,7 @@ class NativeAdManager(
                 override fun onAdClicked() {
                     AdsManager.onAdsLog(
                         AdsLog(
-                            key, adUnitId, "adsClick", "show", null
+                            key, adUnitId, AdsLog.Action.ADS_CLICK, AdsLog.Action.SHOW, null
                         )
                     )
                 }
@@ -164,7 +164,7 @@ class NativeAdManager(
 
                     AdsManager.onAdsLog(
                         AdsLog(
-                            key, adUnitId, "load", "load_failed", loadAdError
+                            key, adUnitId, AdsLog.Action.LOAD, AdsLog.Mess.LOAD_FAILED, loadAdError
                         )
                     )
 
@@ -229,7 +229,7 @@ class NativeAdManager(
 
         AdsManager.onAdsLog(
             AdsLog(
-                key, "", "try_show_pending", "call_show", null
+                key, "", "try_show_pending", AdsLog.Mess.CALL_SHOW, null
             )
         )
 
@@ -358,7 +358,7 @@ class NativeAdManager(
 
             AdsManager.onAdsLog(
                 AdsLog(
-                    key, "", "show", "err_activity_unavailable", null
+                    key, "", AdsLog.Action.SHOW, AdsLog.Mess.ERR_ACTIVITY_UNAVAILABLE, null
                 )
             )
 
@@ -368,7 +368,7 @@ class NativeAdManager(
 
         AdsManager.onAdsLog(
             AdsLog(
-                key, "", "show", "start_show", null
+                key, "", AdsLog.Action.SHOW, AdsLog.Mess.START_SHOW, null
             )
         )
 
@@ -458,7 +458,7 @@ class NativeAdManager(
 
             AdsManager.onAdsLog(
                 AdsLog(
-                    key, "", "show", "show_done", null
+                    key, "", AdsLog.Action.SHOW, AdsLog.Mess.SHOW_DONE, null
                 )
             )
         }

@@ -1,10 +1,9 @@
 package com.hdn.adsmodule.ads.reward
 
 import android.app.Activity
-import android.app.Dialog
-import android.graphics.Color
+import android.os.Handler
+import android.os.Looper
 import android.widget.Toast
-import androidx.core.graphics.drawable.toDrawable
 import com.google.android.gms.ads.AdError
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.FullScreenContentCallback
@@ -37,7 +36,7 @@ object RewardAds {
     var isShowing = false
         private set
 
-    private var loadingDialog: Dialog? = null
+    private val handler = Handler(Looper.getMainLooper())
     private var hasEarnedReward = false
     private fun showAdUnavailableToast(activity: Activity) {
         Toast.makeText(activity, activity.getString(R.string.ad_unavailable), Toast.LENGTH_SHORT)
@@ -65,13 +64,14 @@ object RewardAds {
         activity: Activity,
         useWithoutVip: Boolean = false,
         autoCache: Boolean = true,
+        fakeLoadingTime: Long = 0L,
         callback: RewardCallback
     ) {
-        show(activity, callback, useInterFallback = true, useWithoutVip = useWithoutVip, autoCache = autoCache)
+        show(activity, callback, useInterFallback = true, useWithoutVip = useWithoutVip, autoCache = autoCache, fakeLoadingTime = fakeLoadingTime)
     }
 
-    fun show(activity: Activity, callback: RewardCallback, useWithoutVip: Boolean, autoCache: Boolean = true) {
-        show(activity, callback, useInterFallback = false, useWithoutVip = useWithoutVip, autoCache = autoCache)
+    fun show(activity: Activity, callback: RewardCallback, useWithoutVip: Boolean, autoCache: Boolean = true, fakeLoadingTime: Long = 0L) {
+        show(activity, callback, useInterFallback = false, useWithoutVip = useWithoutVip, autoCache = autoCache, fakeLoadingTime = fakeLoadingTime)
     }
 
     private fun show(
@@ -79,7 +79,8 @@ object RewardAds {
         callback: RewardCallback,
         useInterFallback: Boolean,
         useWithoutVip: Boolean = false,
-        autoCache: Boolean = true
+        autoCache: Boolean = true,
+        fakeLoadingTime: Long = 0L
     ) {
         if (!AdsController.adsEnable || (AdsController.isVip && !useWithoutVip)) {
             callback.onPremium()
@@ -90,13 +91,35 @@ object RewardAds {
             if (useInterFallback) {
                 showInterFallback(activity, useWithoutVip, callback)
             } else {
-                AdsManager.onAdsLog(AdsLog("rwa", "", "show", "err_showing", null))
+                AdsManager.onAdsLog(AdsLog(AdsLog.Type.REWARD, "", AdsLog.Action.SHOW, AdsLog.Mess.ERR_SHOWING, null))
                 callback.onAdFailed()
             }
             return
         }
 
         currentAdUnitIds = rewardIdDefault
+
+        // Fake loading: bắn loading -> chờ fake time (tranh thủ load) -> show nếu ad sẵn sàng
+        if (fakeLoadingTime > 0) {
+            AdsManager.onAdsLoading(true)
+            if (rewardedAd == null) preload(activity)
+            handler.postDelayed({
+                AdsManager.onAdsLoading(false)
+                val ad = rewardedAd
+                if (ad != null) {
+                    showInternal(activity, ad, callback, useInterFallback, useWithoutVip, autoCache)
+                } else {
+                    showAdUnavailableToast(activity)
+                    if (useInterFallback) {
+                        showInterFallback(activity, useWithoutVip, callback)
+                    } else {
+                        callback.onAdFailed()
+                    }
+                }
+            }, fakeLoadingTime)
+            return
+        }
+
         val ad = rewardedAd
         if (ad != null) {
             showInternal(activity, ad, callback, useInterFallback, useWithoutVip, autoCache)
@@ -123,18 +146,18 @@ object RewardAds {
         }
 
         isLoading = true
-        showLoading(activity)
+        AdsManager.onAdsLoading(true)
 
         loadRewardedAd(
             activity = activity,
             ids = currentAdUnitIds,
             index = 0,
             onLoaded = { ad ->
-                dismissLoading()
+                AdsManager.onAdsLoading(false)
                 showInternal(activity, ad, callback, useInterFallback, useWithoutVip, autoCache)
             },
             onFailed = {
-                dismissLoading()
+                AdsManager.onAdsLoading(false)
                 rewardedAd = null
                 isLoading = false
                 showAdUnavailableToast(activity)
@@ -160,14 +183,14 @@ object RewardAds {
             onFailed()
             return
         }
-        AdsManager.onAdsLog(AdsLog("rwa", ids[index], "load", "start_load", null))
+        AdsManager.onAdsLog(AdsLog(AdsLog.Type.REWARD, ids[index], AdsLog.Action.LOAD, AdsLog.Mess.START_LOAD, null))
         RewardedAd.load(
             activity,
             ids[index],
             AdRequest.Builder().build(),
             object : RewardedAdLoadCallback() {
                 override fun onAdLoaded(ad: RewardedAd) {
-                    AdsManager.onAdsLog(AdsLog("rwa", ids[index], "load", "load_success", null))
+                    AdsManager.onAdsLog(AdsLog(AdsLog.Type.REWARD, ids[index], AdsLog.Action.LOAD, AdsLog.Mess.LOAD_SUCCESS, null))
                     rewardedAd = ad
                     isLoading = false
                     ad.setOnPaidEventListener {
@@ -182,7 +205,7 @@ object RewardAds {
                 }
 
                 override fun onAdFailedToLoad(error: LoadAdError) {
-                    AdsManager.onAdsLog(AdsLog("rwa", ids[index], "load", "load_failed", error))
+                    AdsManager.onAdsLog(AdsLog(AdsLog.Type.REWARD, ids[index], AdsLog.Action.LOAD, AdsLog.Mess.LOAD_FAILED, error))
                     loadRewardedAd(activity, ids, index + 1, onLoaded, onFailed)
                 }
             }
@@ -206,17 +229,17 @@ object RewardAds {
 
         ad.fullScreenContentCallback = object : FullScreenContentCallback() {
             override fun onAdShowedFullScreenContent() {
-                AdsManager.onAdsLog(AdsLog("rwa", "", "show", "start_show", null))
+                AdsManager.onAdsLog(AdsLog(AdsLog.Type.REWARD, "", AdsLog.Action.SHOW, AdsLog.Mess.START_SHOW, null))
                 isShowing = true
                 callback.onAdShowed()
             }
 
             override fun onAdClicked() {
-                AdsManager.onAdsLog(AdsLog("rwa", "", "adsClick", "show", null))
+                AdsManager.onAdsLog(AdsLog(AdsLog.Type.REWARD, "", AdsLog.Action.ADS_CLICK, AdsLog.Action.SHOW, null))
             }
 
             override fun onAdFailedToShowFullScreenContent(adError: AdError) {
-                AdsManager.onAdsLog(AdsLog("rwa", "", "show", "show_failed", adError))
+                AdsManager.onAdsLog(AdsLog(AdsLog.Type.REWARD, "", AdsLog.Action.SHOW, AdsLog.Mess.SHOW_FAILED, adError))
                 rewardedAd = null
                 isShowing = false
                 showAdUnavailableToast(activity)
@@ -228,7 +251,7 @@ object RewardAds {
             }
 
             override fun onAdDismissedFullScreenContent() {
-                AdsManager.onAdsLog(AdsLog("rwa", "", "show", "show_dismiss", null))
+                AdsManager.onAdsLog(AdsLog(AdsLog.Type.REWARD, "", AdsLog.Action.SHOW, AdsLog.Mess.SHOW_DISMISS, null))
                 InterAds.startDelay()
                 rewardedAd = null
                 isShowing = false
@@ -241,7 +264,7 @@ object RewardAds {
                 if (autoCache) preload(activity)
             }
         }
-        AdsManager.onAdsLog(AdsLog("rwa", "", "show", "call_show", null))
+        AdsManager.onAdsLog(AdsLog(AdsLog.Type.REWARD, "", AdsLog.Action.SHOW, AdsLog.Mess.CALL_SHOW, null))
         ad.show(activity) {
             hasEarnedReward = true
         }
@@ -253,7 +276,7 @@ object RewardAds {
         callback: RewardCallback
     ) {
         callback.onAdShowed()
-        AdsManager.onAdsLog(AdsLog("rwa", "", "show_ita_fall_back", "call_show", null))
+        AdsManager.onAdsLog(AdsLog(AdsLog.Type.REWARD, "", AdsLog.Action.SHOW_ITA_FALLBACK, AdsLog.Mess.CALL_SHOW, null))
         InterAds.forceShowAdsBreak(activity, useWithoutVip) {
             if (it) {
                 callback.onRewardEarned()
@@ -262,25 +285,6 @@ object RewardAds {
             }
             callback.onAdClosed()
         }
-    }
-
-    private fun showLoading(activity: Activity) {
-        if (loadingDialog?.isShowing == true) return
-
-        loadingDialog = Dialog(activity, R.style.AppTheme_FullScreenDialog).apply {
-            setContentView(R.layout.dialog_loading_reward)
-            window?.setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
-            setCancelable(false)
-            show()
-        }
-    }
-
-    private fun dismissLoading() {
-        try {
-            loadingDialog?.dismiss()
-        } catch (_: Exception) {
-        }
-        loadingDialog = null
     }
 
     interface RewardCallback {

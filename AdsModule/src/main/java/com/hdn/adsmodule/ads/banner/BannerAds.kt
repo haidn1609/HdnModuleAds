@@ -100,9 +100,9 @@ object BannerAds {
         }
         AdsManager.onAdsLog(
             AdsLog(
-                if (type == BannerType.NORMAL) "bna" else "bnca",
+                if (type == BannerType.NORMAL) AdsLog.Type.BANNER else AdsLog.Type.BANNER_COLLAPSIBLE,
                 "",
-                "call_show",
+                AdsLog.Mess.CALL_SHOW,
                 "",
                 null
             )
@@ -128,16 +128,16 @@ object BannerAds {
                 if (isBannerLoaded || adViewContainer.isNotEmpty()) {
                     hideLoading(loadingText, loadingOverlay)
                     AdsManager.onAdsLog(
-                        AdsLog("bna", "", "show", "show_success", null)
+                        AdsLog(AdsLog.Type.BANNER, "", AdsLog.Action.SHOW, AdsLog.Mess.SHOW_SUCCESS, null)
                     )
                 } else {
                     showLoading(loadingText, loadingOverlay)
                     AdsManager.onAdsLog(
-                        AdsLog("bna", "", "show", "show_failed", null)
+                        AdsLog(AdsLog.Type.BANNER, "", AdsLog.Action.SHOW, AdsLog.Mess.SHOW_FAILED, null)
                     )
                 }
             } else {
-                AdsManager.onAdsLog(AdsLog("bna", "", "call_load", "", null))
+                AdsManager.onAdsLog(AdsLog(AdsLog.Type.BANNER, "", AdsLog.Action.CALL_LOAD, "", null))
                 showLoading(loadingText, loadingOverlay)
                 loadBannerByIndex(
                     activity = activity,
@@ -151,7 +151,7 @@ object BannerAds {
                 )
             }
         } else {
-            AdsManager.onAdsLog(AdsLog("bnca", "", "call_load", "", null))
+            AdsManager.onAdsLog(AdsLog(AdsLog.Type.BANNER_COLLAPSIBLE, "", AdsLog.Action.CALL_LOAD, "", null))
             showLoading(loadingText, loadingOverlay)
             loadBannerByIndex(
                 activity = activity,
@@ -193,10 +193,10 @@ object BannerAds {
             setAdSize(adSize)
             AdsManager.onAdsLog(
                 AdsLog(
-                    if (bannerType == BannerType.NORMAL) "bna" else "bnca",
+                    if (bannerType == BannerType.NORMAL) AdsLog.Type.BANNER else AdsLog.Type.BANNER_COLLAPSIBLE,
                     adUnitId,
-                    "load",
-                    "start_load",
+                    AdsLog.Action.LOAD,
+                    AdsLog.Mess.START_LOAD,
                     null
                 )
             )
@@ -217,19 +217,19 @@ object BannerAds {
                     }
                     AdsManager.onAdsLog(
                         AdsLog(
-                            if (bannerType == BannerType.NORMAL) "bna" else "bnca",
+                            if (bannerType == BannerType.NORMAL) AdsLog.Type.BANNER else AdsLog.Type.BANNER_COLLAPSIBLE,
                             adUnitId,
-                            "load",
-                            "load_success",
+                            AdsLog.Action.LOAD,
+                            AdsLog.Mess.LOAD_SUCCESS,
                             null
                         )
                     )
                     AdsManager.onAdsLog(
                         AdsLog(
-                            if (bannerType == BannerType.NORMAL) "bna" else "bnca",
+                            if (bannerType == BannerType.NORMAL) AdsLog.Type.BANNER else AdsLog.Type.BANNER_COLLAPSIBLE,
                             "",
-                            "show",
-                            "show_success",
+                            AdsLog.Action.SHOW,
+                            AdsLog.Mess.SHOW_SUCCESS,
                             null
                         )
                     )
@@ -239,10 +239,10 @@ object BannerAds {
                 override fun onAdClicked() {
                     AdsManager.onAdsLog(
                         AdsLog(
-                            if (bannerType == BannerType.NORMAL) "bna" else "bnca",
+                            if (bannerType == BannerType.NORMAL) AdsLog.Type.BANNER else AdsLog.Type.BANNER_COLLAPSIBLE,
                             adUnitId,
-                            "adsClick",
-                            "show",
+                            AdsLog.Action.ADS_CLICK,
+                            AdsLog.Action.SHOW,
                             null
                         )
                     )
@@ -255,10 +255,10 @@ object BannerAds {
                     }
                     AdsManager.onAdsLog(
                         AdsLog(
-                            if (bannerType == BannerType.NORMAL) "bna" else "bnca",
+                            if (bannerType == BannerType.NORMAL) AdsLog.Type.BANNER else AdsLog.Type.BANNER_COLLAPSIBLE,
                             adUnitId,
-                            "load",
-                            "load_failed",
+                            AdsLog.Action.LOAD,
+                            AdsLog.Mess.LOAD_FAILED,
                             error
                         )
                     )
