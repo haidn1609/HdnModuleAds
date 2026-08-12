@@ -24,20 +24,12 @@ object AdsManager {
     @JvmStatic
     var adsLog: ((AdsLog) -> Unit)? = null
 
-    // Bắn trạng thái loading (load-and-show) ra ngoài: true = hiện loading, false = ẩn. App tự show UI.
-    @JvmStatic
-    var adsLoading: ((Boolean) -> Unit)? = null
-
     fun onAdsPair(adValue: AdValue) {
         adsPair?.invoke(adValue)
     }
 
     fun onAdsLog(adValue: AdsLog) {
         adsLog?.invoke(adValue)
-    }
-
-    fun onAdsLoading(isLoading: Boolean) {
-        adsLoading?.invoke(isLoading)
     }
 
     //config
@@ -145,21 +137,25 @@ object AdsManager {
 
     //    inter
     @JvmStatic
+    @JvmOverloads
     fun showInterSplashAds(
         activity: AppCompatActivity,
         startCallback: Callback?,
-        doneCallBack: Callback?
+        doneCallBack: Callback?,
+        fakeLoadingTime: Long = 0L
     ) {
-        InterSplashAds.showAdsBreak(activity, false, 0, "", startCallback, doneCallBack)
+        InterSplashAds.showAdsBreak(activity, false, 0, "", startCallback, doneCallBack, fakeLoadingTime)
     }
 
     @JvmStatic
+    @JvmOverloads
     fun showInterSplashAds(
         activity: AppCompatActivity,
         dialogRes: Int,
         nativeKey: String,
         startCallback: Callback?,
-        doneCallBack: Callback?
+        doneCallBack: Callback?,
+        fakeLoadingTime: Long = 0L
     ) {
         InterSplashAds.showAdsBreak(
             activity,
@@ -167,7 +163,8 @@ object AdsManager {
             dialogRes,
             nativeKey,
             startCallback,
-            doneCallBack
+            doneCallBack,
+            fakeLoadingTime
         )
     }
 
