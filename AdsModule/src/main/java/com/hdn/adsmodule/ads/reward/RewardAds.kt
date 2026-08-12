@@ -1,12 +1,9 @@
 package com.hdn.adsmodule.ads.reward
 
 import android.app.Activity
-import android.app.Dialog
-import android.graphics.Color
 import android.os.Handler
 import android.os.Looper
 import android.widget.Toast
-import androidx.core.graphics.drawable.toDrawable
 import com.google.android.gms.ads.AdError
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.FullScreenContentCallback
@@ -19,6 +16,7 @@ import com.hdn.adsmodule.ads.AdsController
 import com.hdn.adsmodule.ads.AdsIdConfig
 import com.hdn.adsmodule.ads.AdsManager
 import com.hdn.adsmodule.ads.inter.InterAds
+import com.hdn.adsmodule.base.ui.LoadingDialog
 import com.hdn.adsmodule.model.AdValue
 import com.hdn.adsmodule.model.AdsLog
 
@@ -40,7 +38,6 @@ object RewardAds {
         private set
 
     private val handler = Handler(Looper.getMainLooper())
-    private var loadingDialog: Dialog? = null
     private var hasEarnedReward = false
     private fun showAdUnavailableToast(activity: Activity) {
         Toast.makeText(activity, activity.getString(R.string.ad_unavailable), Toast.LENGTH_SHORT)
@@ -105,10 +102,10 @@ object RewardAds {
 
         // Fake loading: bắn loading -> chờ fake time (tranh thủ load) -> show nếu ad sẵn sàng
         if (fakeLoadingTime > 0) {
-            showLoading(activity)
+            LoadingDialog.show(activity)
             if (rewardedAd == null) preload(activity)
             handler.postDelayed({
-                dismissLoading()
+                LoadingDialog.dismiss()
                 val ad = rewardedAd
                 if (ad != null) {
                     showInternal(activity, ad, callback, useInterFallback, useWithoutVip, autoCache)
@@ -150,18 +147,18 @@ object RewardAds {
         }
 
         isLoading = true
-        showLoading(activity)
+        LoadingDialog.show(activity)
 
         loadRewardedAd(
             activity = activity,
             ids = currentAdUnitIds,
             index = 0,
             onLoaded = { ad ->
-                dismissLoading()
+                LoadingDialog.dismiss()
                 showInternal(activity, ad, callback, useInterFallback, useWithoutVip, autoCache)
             },
             onFailed = {
-                dismissLoading()
+                LoadingDialog.dismiss()
                 rewardedAd = null
                 isLoading = false
                 showAdUnavailableToast(activity)
@@ -289,24 +286,6 @@ object RewardAds {
             }
             callback.onAdClosed()
         }
-    }
-
-    private fun showLoading(activity: Activity) {
-        if (loadingDialog?.isShowing == true) return
-        loadingDialog = Dialog(activity, R.style.AppTheme_FullScreenDialog).apply {
-            setContentView(R.layout.dialog_loading_ad)
-            window?.setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
-            setCancelable(false)
-            show()
-        }
-    }
-
-    private fun dismissLoading() {
-        try {
-            loadingDialog?.dismiss()
-        } catch (_: Exception) {
-        }
-        loadingDialog = null
     }
 
     interface RewardCallback {

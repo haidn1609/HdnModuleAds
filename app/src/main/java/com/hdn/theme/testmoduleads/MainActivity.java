@@ -61,11 +61,11 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(this, "itsa start show done", Toast.LENGTH_SHORT).show();
             return null;
         }, 1500L));
-        binding.showIta.setOnClickListener(view -> AdsManager.showInterAds(this, false, 0L, success -> {
+        binding.showIta.setOnClickListener(view -> AdsManager.showInterAds(this, false, 1000L, success -> {
             Toast.makeText(this, "ita show done: " + success, Toast.LENGTH_SHORT).show();
             return null;
         }));
-        binding.showItaFix.setOnClickListener(view -> AdsManager.forceShowInterAds(this, false, false, 0L, success -> {
+        binding.showItaFix.setOnClickListener(view -> AdsManager.forceShowInterAds(this, false, false, 1000L, success -> {
             Toast.makeText(this, "ita force show done: " + success, Toast.LENGTH_SHORT).show();
             return null;
         }));

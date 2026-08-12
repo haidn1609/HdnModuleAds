@@ -1,13 +1,10 @@
 package com.hdn.adsmodule.ads.inter
 
 import android.app.Activity
-import android.app.Dialog
 import android.content.Context
-import android.graphics.Color
 import android.os.Handler
 import android.os.Looper
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.graphics.drawable.toDrawable
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import com.google.android.gms.ads.AdError
@@ -22,6 +19,7 @@ import com.hdn.adsmodule.ads.AdsController
 import com.hdn.adsmodule.ads.AdsIdConfig
 import com.hdn.adsmodule.ads.AdsManager
 import com.hdn.adsmodule.ads.fullDialog.FullScreenDialog
+import com.hdn.adsmodule.base.ui.LoadingDialog
 import com.hdn.adsmodule.model.AdValue
 import com.hdn.adsmodule.model.AdsLog
 import kotlin.collections.ifEmpty
@@ -45,7 +43,6 @@ object InterSplashAds {
     private var isLoading = false
     private var loadTimeAd: Long = 0
     private var currentAdUnitIds: List<String> = emptyList()
-    private var loadingDialog: Dialog? = null
 
     @JvmStatic
     fun initInterAds(
@@ -173,10 +170,10 @@ object InterSplashAds {
 
         // Fake loading: hiện loading -> chờ fake time (tranh thủ load) -> show nếu ad sẵn sàng
         if (fakeLoadingTime > 0) {
-            showLoading(activity)
+            LoadingDialog.show(activity)
             if (!isCanShowAds) initInterAds(activity, callback = null)
             Handler(Looper.getMainLooper()).postDelayed({
-                dismissLoading()
+                LoadingDialog.dismiss()
                 if (isCanShowAds) {
                     runCatching {
                         showAdsFull(activity, enableDialog, layoutRes, key, startCallback, doneCallBack)
@@ -273,24 +270,6 @@ object InterSplashAds {
             }, 3000)
         }
         currentAd.show(context)
-    }
-
-    private fun showLoading(activity: Activity) {
-        if (loadingDialog?.isShowing == true) return
-        loadingDialog = Dialog(activity, R.style.AppTheme_FullScreenDialog).apply {
-            setContentView(R.layout.dialog_loading_ad)
-            window?.setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
-            setCancelable(false)
-            show()
-        }
-    }
-
-    private fun dismissLoading() {
-        try {
-            loadingDialog?.dismiss()
-        } catch (_: Exception) {
-        }
-        loadingDialog = null
     }
 
     private fun clear() {

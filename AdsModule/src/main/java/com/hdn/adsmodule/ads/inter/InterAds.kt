@@ -1,13 +1,10 @@
 package com.hdn.adsmodule.ads.inter
 
 import android.app.Activity
-import android.app.Dialog
 import android.content.Context
-import android.graphics.Color
 import android.os.Handler
 import android.os.Looper
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.graphics.drawable.toDrawable
 
 import com.google.android.gms.ads.AdError
 import com.google.android.gms.ads.AdRequest
@@ -15,11 +12,11 @@ import com.google.android.gms.ads.FullScreenContentCallback
 import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.interstitial.InterstitialAd
 import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
-import com.hdn.adsmodule.R
 import com.hdn.adsmodule.ads.AdUnitParser
 import com.hdn.adsmodule.ads.AdsController
 import com.hdn.adsmodule.ads.AdsIdConfig
 import com.hdn.adsmodule.ads.AdsManager
+import com.hdn.adsmodule.base.ui.LoadingDialog
 import com.hdn.adsmodule.model.AdValue
 import com.hdn.adsmodule.model.AdsLog
 
@@ -49,7 +46,6 @@ object InterAds {
     var isShowing: Boolean = false
     private var isCoolingDown: Boolean = false
     private var loadTimeAd: Long = 0
-    private var loadingDialog: Dialog? = null
     var interAdsTime = 45000L
         private set
 
@@ -207,13 +203,13 @@ object InterAds {
 
         // Fake loading: bắn loading -> chờ fake time -> show nếu ad sẵn sàng
         if (fakeLoadingTime > 0) {
-            showLoading(activity)
+            LoadingDialog.show(activity)
             // chưa có ad thì tranh thủ load trong lúc fake (initInterAds tự chặn nếu đang load)
             if (!isCanForceShowAds) {
                 initInterAds(context = activity, isForceReload = true, useWithoutVip = useWithoutVip)
             }
             handler.postDelayed({
-                dismissLoading()
+                LoadingDialog.dismiss()
                 if (isCanForceShowAds) {
                     showAdsFull(activity, useWithoutVip, autoCache, callback)
                 } else {
@@ -235,12 +231,12 @@ object InterAds {
             return
         }
         // Chưa có ad -> bắn loading, load xong show luôn
-        showLoading(activity)
+        LoadingDialog.show(activity)
         initInterAds(
             context = activity,
             isForceReload = true,
             onLoadSuccess = {
-                dismissLoading()
+                LoadingDialog.dismiss()
                 if (isCanForceShowAds) {
                     showAdsFull(activity, useWithoutVip, autoCache, callback)
                 } else {
@@ -248,7 +244,7 @@ object InterAds {
                 }
             },
             onLoadError = {
-                dismissLoading()
+                LoadingDialog.dismiss()
                 callback?.invoke(false)
             },
             useWithoutVip = useWithoutVip
@@ -265,12 +261,13 @@ object InterAds {
     ) {
         AdsManager.onAdsLog(AdsLog(AdsLog.Type.INTER, "", AdsLog.Action.SHOW, AdsLog.Mess.CALL_SHOW, null))
 
-        // Fake loading: bắn loading -> chờ fake time (tranh thủ load) -> show nếu ad sẵn sàng (vẫn tôn trọng cooldown)
-        if (fakeLoadingTime > 0 && activity is AppCompatActivity) {
-            showLoading(activity)
+        // Fake loading: bắn loading -> chờ fake time (tranh thủ load) -> show nếu ad sẵn sàng.
+        // Đang trong cooldown interAdsTime -> bỏ qua, không show loading (rơi xuống nhánh dưới -> callback false).
+        if (fakeLoadingTime > 0 && activity is AppCompatActivity && !isCoolingDown) {
+            LoadingDialog.show(activity)
             if (!isCanShowAds) initInterAds(context = activity, useWithoutVip = useWithoutVip)
             handler.postDelayed({
-                dismissLoading()
+                LoadingDialog.dismiss()
                 if (isCanShowAds) {
                     showAdsFull(activity, useWithoutVip, callback = callback)
                 } else {
@@ -346,24 +343,6 @@ object InterAds {
         isCoolingDown = true
         handler.removeCallbacks(resetCooldownRunnable)
         handler.postDelayed(resetCooldownRunnable, interAdsTime)
-    }
-
-    private fun showLoading(activity: Activity) {
-        if (loadingDialog?.isShowing == true) return
-        loadingDialog = Dialog(activity, R.style.AppTheme_FullScreenDialog).apply {
-            setContentView(R.layout.dialog_loading_ad)
-            window?.setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
-            setCancelable(false)
-            show()
-        }
-    }
-
-    private fun dismissLoading() {
-        try {
-            loadingDialog?.dismiss()
-        } catch (_: Exception) {
-        }
-        loadingDialog = null
     }
 
     private fun clear() {
