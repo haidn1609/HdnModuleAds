@@ -45,7 +45,8 @@ class LoadingDialog : BaseDialogFragment() {
         // activity phải là AppCompatActivity (cần supportFragmentManager). Không phải -> bỏ qua.
         fun show(activity: Activity) {
             val fm = (activity as? AppCompatActivity)?.supportFragmentManager ?: return
-            if (current?.isAdded == true) return
+            // findFragmentByTag bắt được cả dialog đang chờ commit (isAdded chưa true) -> tránh show chồng
+            if (current != null || fm.findFragmentByTag(TAG) != null) return
             current = LoadingDialog().also { runCatching { it.show(fm, TAG) } }
         }
 

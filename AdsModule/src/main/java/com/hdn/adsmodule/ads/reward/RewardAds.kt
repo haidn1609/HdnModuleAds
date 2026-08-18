@@ -3,6 +3,7 @@ package com.hdn.adsmodule.ads.reward
 import android.app.Activity
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.widget.Toast
 import com.google.android.gms.ads.AdError
 import com.google.android.gms.ads.AdRequest
@@ -100,23 +101,17 @@ object RewardAds {
 
         currentAdUnitIds = rewardIdDefault
 
-        // Fake loading: bắn loading -> chờ fake time (tranh thủ load) -> show nếu ad sẵn sàng
+        // Fake loading: có ad sẵn -> fake time rồi show. Chưa có ad -> load-and-show.
         if (fakeLoadingTime > 0) {
+            val ad = rewardedAd
+            if (ad == null) {
+                loadAndShow(activity, callback, useWithoutVip, useInterFallback, autoCache, fakeLoadingTime)
+                return
+            }
             LoadingDialog.show(activity)
-            if (rewardedAd == null) preload(activity)
             handler.postDelayed({
                 LoadingDialog.dismiss()
-                val ad = rewardedAd
-                if (ad != null) {
-                    showInternal(activity, ad, callback, useInterFallback, useWithoutVip, autoCache)
-                } else {
-                    showAdUnavailableToast(activity)
-                    if (useInterFallback) {
-                        showInterFallback(activity, useWithoutVip, callback)
-                    } else {
-                        callback.onAdFailed()
-                    }
-                }
+                showInternal(activity, ad, callback, useInterFallback, useWithoutVip, autoCache)
             }, fakeLoadingTime)
             return
         }
@@ -125,7 +120,7 @@ object RewardAds {
         if (ad != null) {
             showInternal(activity, ad, callback, useInterFallback, useWithoutVip, autoCache)
         } else {
-            loadAndShow(activity, callback, useInterFallback, useWithoutVip, autoCache)
+            loadAndShow(activity, callback, useWithoutVip, useInterFallback, autoCache)
         }
     }
 
@@ -134,7 +129,8 @@ object RewardAds {
         callback: RewardCallback,
         useWithoutVip: Boolean = false,
         useInterFallback: Boolean,
-        autoCache: Boolean = true
+        autoCache: Boolean = true,
+        fakeLoadingTime: Long = 0L
     ) {
         if (!AdsController.adsEnable || (AdsController.isVip && !useWithoutVip)) {
             callback.onPremium()
@@ -148,14 +144,19 @@ object RewardAds {
 
         isLoading = true
         LoadingDialog.show(activity)
+        val startTime = SystemClock.elapsedRealtime()
 
         loadRewardedAd(
             activity = activity,
             ids = currentAdUnitIds,
             index = 0,
             onLoaded = { ad ->
-                LoadingDialog.dismiss()
-                showInternal(activity, ad, callback, useInterFallback, useWithoutVip, autoCache)
+                // Đảm bảo loading hiển thị đủ fakeLoadingTime dù ad load nhanh hơn
+                val remaining = fakeLoadingTime - (SystemClock.elapsedRealtime() - startTime)
+                handler.postDelayed({
+                    LoadingDialog.dismiss()
+                    showInternal(activity, ad, callback, useInterFallback, useWithoutVip, autoCache)
+                }, remaining.coerceAtLeast(0))
             },
             onFailed = {
                 LoadingDialog.dismiss()

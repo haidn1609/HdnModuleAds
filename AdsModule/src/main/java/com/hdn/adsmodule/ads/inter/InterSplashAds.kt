@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
@@ -168,24 +169,36 @@ object InterSplashAds {
         }
         val key = if (enableDialog) nativeKey else ""
 
-        // Fake loading: hiện loading -> chờ fake time (tranh thủ load) -> show nếu ad sẵn sàng
+        // Fake loading: có ad sẵn -> chờ đủ fake time rồi show. Chưa có ad -> load, show khi xong nhưng tối thiểu fake time.
         if (fakeLoadingTime > 0) {
-            LoadingDialog.show(activity)
-            if (!isCanShowAds) initInterAds(activity, callback = null)
-            Handler(Looper.getMainLooper()).postDelayed({
-                LoadingDialog.dismiss()
-                if (isCanShowAds) {
-                    runCatching {
-                        showAdsFull(activity, enableDialog, layoutRes, key, startCallback, doneCallBack)
-                    }.onFailure {
-                        AdsManager.onAdsLog(AdsLog(AdsLog.Type.INTER_SPLASH, "", AdsLog.Action.SHOW, AdsLog.Mess.ERR_CALL_SHOW, null))
+            val handler = Handler(Looper.getMainLooper())
+            // Chờ nốt tới khi đủ fake time (tính từ startTime) rồi show/kết thúc
+            fun showAfterFakeTime(startTime: Long) {
+                val remaining = fakeLoadingTime - (SystemClock.elapsedRealtime() - startTime)
+                handler.postDelayed({
+                    LoadingDialog.dismiss()
+                    if (isCanShowAds) {
+                        runCatching {
+                            showAdsFull(activity, enableDialog, layoutRes, key, startCallback, doneCallBack)
+                        }.onFailure {
+                            AdsManager.onAdsLog(AdsLog(AdsLog.Type.INTER_SPLASH, "", AdsLog.Action.SHOW, AdsLog.Mess.ERR_CALL_SHOW, null))
+                            doneCallBack?.invoke()
+                        }
+                    } else {
+                        AdsManager.onAdsLog(AdsLog(AdsLog.Type.INTER_SPLASH, "", AdsLog.Action.SHOW, AdsLog.Mess.CANT_SHOW_VIP, null))
                         doneCallBack?.invoke()
                     }
-                } else {
-                    AdsManager.onAdsLog(AdsLog(AdsLog.Type.INTER_SPLASH, "", AdsLog.Action.SHOW, AdsLog.Mess.CANT_SHOW_VIP, null))
-                    doneCallBack?.invoke()
-                }
-            }, fakeLoadingTime)
+                }, remaining.coerceAtLeast(0))
+            }
+
+            LoadingDialog.show(activity)
+            val startTime = SystemClock.elapsedRealtime()
+            if (isCanShowAds) {
+                showAfterFakeTime(startTime)
+            } else {
+                // callback của initInterAds bắn cả khi load xong lẫn fail -> chờ nốt fake time rồi kiểm tra
+                initInterAds(activity, callback = { showAfterFakeTime(startTime) })
+            }
             return
         }
 
@@ -262,6 +275,7 @@ object InterSplashAds {
         }
         if (showDialog) {
             Handler(Looper.getMainLooper()).postDelayed({
+                if (context.isFinishing || context.isDestroyed) return@postDelayed
                 AdsManager.onAdsLog(AdsLog(AdsLog.Type.INTER_SPLASH, "", AdsLog.Action.SHOW_DIALOG_ADS, AdsLog.Mess.CALL_SHOW, null))
                 dialogNativeFull.showAllowingStateLoss(
                     context.supportFragmentManager,

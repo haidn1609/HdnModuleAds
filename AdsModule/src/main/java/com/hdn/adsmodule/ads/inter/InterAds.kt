@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import androidx.appcompat.app.AppCompatActivity
 
 import com.google.android.gms.ads.AdError
@@ -201,21 +202,48 @@ object InterAds {
             return
         }
 
-        // Fake loading: bắn loading -> chờ fake time -> show nếu ad sẵn sàng
+        // Fake loading: có ad sẵn -> chờ đủ fake time rồi show. Chưa có ad -> load, show khi xong nhưng tối thiểu fake time.
         if (fakeLoadingTime > 0) {
-            LoadingDialog.show(activity)
-            // chưa có ad thì tranh thủ load trong lúc fake (initInterAds tự chặn nếu đang load)
-            if (!isCanForceShowAds) {
-                initInterAds(context = activity, isForceReload = true, useWithoutVip = useWithoutVip)
+            if (isCanForceShowAds) {
+                LoadingDialog.show(activity)
+                handler.postDelayed({
+                    LoadingDialog.dismiss()
+                    if (isCanForceShowAds) {
+                        showAdsFull(activity, useWithoutVip, autoCache, callback)
+                    } else {
+                        callback?.invoke(false)
+                    }
+                }, fakeLoadingTime)
+                return
             }
-            handler.postDelayed({
-                LoadingDialog.dismiss()
-                if (isCanForceShowAds) {
-                    showAdsFull(activity, useWithoutVip, autoCache, callback)
-                } else {
+            if (isLoading) {
+                AdsManager.onAdsLog(AdsLog(AdsLog.Type.INTER, "", AdsLog.Action.FORCE_SHOW, AdsLog.Mess.ERR_BUSY, null))
+                callback?.invoke(false)
+                return
+            }
+            LoadingDialog.show(activity)
+            val startTime = SystemClock.elapsedRealtime()
+            initInterAds(
+                context = activity,
+                isForceReload = true,
+                onLoadSuccess = {
+                    // Đảm bảo loading hiển thị đủ fakeLoadingTime dù ad load nhanh hơn
+                    val remaining = fakeLoadingTime - (SystemClock.elapsedRealtime() - startTime)
+                    handler.postDelayed({
+                        LoadingDialog.dismiss()
+                        if (isCanForceShowAds) {
+                            showAdsFull(activity, useWithoutVip, autoCache, callback)
+                        } else {
+                            callback?.invoke(false)
+                        }
+                    }, remaining.coerceAtLeast(0))
+                },
+                onLoadError = {
+                    LoadingDialog.dismiss()
                     callback?.invoke(false)
-                }
-            }, fakeLoadingTime)
+                },
+                useWithoutVip = useWithoutVip
+            )
             return
         }
 
@@ -261,19 +289,47 @@ object InterAds {
     ) {
         AdsManager.onAdsLog(AdsLog(AdsLog.Type.INTER, "", AdsLog.Action.SHOW, AdsLog.Mess.CALL_SHOW, null))
 
-        // Fake loading: bắn loading -> chờ fake time (tranh thủ load) -> show nếu ad sẵn sàng.
+        // Fake loading: có ad sẵn -> chờ đủ fake time rồi show. Chưa có ad -> load, show khi xong nhưng tối thiểu fake time.
         // Đang trong cooldown interAdsTime -> bỏ qua, không show loading (rơi xuống nhánh dưới -> callback false).
         if (fakeLoadingTime > 0 && activity is AppCompatActivity && !isCoolingDown) {
+            if (isCanShowAds) {
+                LoadingDialog.show(activity)
+                handler.postDelayed({
+                    LoadingDialog.dismiss()
+                    if (isCanShowAds) {
+                        showAdsFull(activity, useWithoutVip, callback = callback)
+                    } else {
+                        callback?.invoke(false)
+                    }
+                }, fakeLoadingTime)
+                return
+            }
+            if (isLoading) {
+                AdsManager.onAdsLog(AdsLog(AdsLog.Type.INTER, "", AdsLog.Action.SHOW, AdsLog.Mess.ERR_CALL_SHOW, null))
+                callback?.invoke(false)
+                return
+            }
             LoadingDialog.show(activity)
-            if (!isCanShowAds) initInterAds(context = activity, useWithoutVip = useWithoutVip)
-            handler.postDelayed({
-                LoadingDialog.dismiss()
-                if (isCanShowAds) {
-                    showAdsFull(activity, useWithoutVip, callback = callback)
-                } else {
+            val startTime = SystemClock.elapsedRealtime()
+            initInterAds(
+                context = activity,
+                useWithoutVip = useWithoutVip,
+                onLoadSuccess = {
+                    val remaining = fakeLoadingTime - (SystemClock.elapsedRealtime() - startTime)
+                    handler.postDelayed({
+                        LoadingDialog.dismiss()
+                        if (isCanShowAds) {
+                            showAdsFull(activity, useWithoutVip, callback = callback)
+                        } else {
+                            callback?.invoke(false)
+                        }
+                    }, remaining.coerceAtLeast(0))
+                },
+                onLoadError = {
+                    LoadingDialog.dismiss()
                     callback?.invoke(false)
                 }
-            }, fakeLoadingTime)
+            )
             return
         }
 

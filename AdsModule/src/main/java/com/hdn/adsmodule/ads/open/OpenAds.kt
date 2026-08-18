@@ -129,7 +129,8 @@ object OpenAds {
             return
         }
         if (appOpenAd == null) {
-            initOpenAds(context) {}
+            // chưa có ad -> tranh thủ load, trả callback để caller đi tiếp (thường là điều hướng sau splash)
+            initOpenAds(context) { callback?.invoke() }
             return
         }
         AdsManager.onAdsLog(AdsLog(AdsLog.Type.OPEN , "", AdsLog.Action.SHOW, AdsLog.Mess.CALL_SHOW,null))
