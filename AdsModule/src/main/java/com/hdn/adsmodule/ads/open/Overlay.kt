@@ -31,9 +31,16 @@ class Overlay : AppCompatActivity() {
         }
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        if (instance === this) instance = null
+    }
+
     companion object {
         var instance: Overlay? = null
         fun start(context: Context) {
+            // Overlay đang hiện -> không mở đè thêm
+            if (instance != null) return
             val intent = Intent(context, Overlay::class.java)
             context.startActivity(intent)
         }
