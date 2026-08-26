@@ -289,6 +289,12 @@ object InterAds {
     ) {
         AdsManager.onAdsLog(AdsLog(AdsLog.Type.INTER, "", AdsLog.Action.SHOW, AdsLog.Mess.CALL_SHOW, null))
 
+        // VIP/tắt ads mà không useWithoutVip -> không hiện loading, trả callback false luôn
+        if (!AdsController.canShowAds(useWithoutVip)) {
+            callback?.invoke(false)
+            return
+        }
+
         // Fake loading: có ad sẵn -> chờ đủ fake time rồi show. Chưa có ad -> load, show khi xong nhưng tối thiểu fake time.
         // Đang trong cooldown interAdsTime -> bỏ qua, không show loading (rơi xuống nhánh dưới -> callback false).
         if (fakeLoadingTime > 0 && activity is AppCompatActivity && !isCoolingDown) {

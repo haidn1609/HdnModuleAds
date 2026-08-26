@@ -32,6 +32,7 @@ public class MainActivity extends AppCompatActivity {
     private void initData() {
         AdsManager.setDebug(true);
         AdsManager.setVip(false);
+        AdsManager.setEnabled(false);
         RemoteManager.initRemoteConfig(() -> {
             Toast.makeText(this, "config done", Toast.LENGTH_SHORT).show();
 
