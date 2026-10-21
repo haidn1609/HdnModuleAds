@@ -26,12 +26,9 @@ In Application:
                 initializationStatus -> {
                 });
 ```
-Add AndroidManifest.xml
-```kotlin
-  <activity
-            android:name="com.hdn.adsmodule.ads.open.Overlay"
-            android:exported="false"/>
-```
+Custom màn Overlay (open ads): tạo `res/layout/activity_overlay.xml` trong app, layout này sẽ được dùng thay layout của thư viện.
+Id tùy chọn: `imgAvatar` (ImageView, gán icon app), `btnContinue` (click để đóng).
+
 add build.gradle
 ```kotlin
  buildFeatures {

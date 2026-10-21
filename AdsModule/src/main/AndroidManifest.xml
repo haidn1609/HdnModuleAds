@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <application>
+        <!-- khai báo sẵn trong module -> manifest merger tự gộp vào app, app không cần khai báo -->
+        <activity
+            android:name="com.hdn.adsmodule.ads.open.Overlay"
+            android:exported="false" />
+    </application>
 </manifest>
