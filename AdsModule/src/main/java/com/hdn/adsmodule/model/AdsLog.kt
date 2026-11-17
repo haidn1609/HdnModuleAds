@@ -38,6 +38,7 @@ class AdsLog(
         const val START_LOAD = "start_load"
         const val LOAD_SUCCESS = "load_success"
         const val LOAD_FAILED = "load_failed"
+        const val REFRESH_FAILED = "refresh_failed"
         const val START_FAILED = "start_failed"
         const val CALL_SHOW = "call_show"
         const val START_SHOW = "start_show"

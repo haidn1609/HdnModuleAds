@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.util.DisplayMetrics
 import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.widget.LinearLayout
 import com.google.ads.mediation.admob.AdMobAdapter
 import com.google.android.gms.ads.AdListener
@@ -22,6 +23,7 @@ import com.hdn.adsmodule.ads.AdsController
 import com.hdn.adsmodule.ads.AdsIdConfig
 import com.hdn.adsmodule.ads.AdsManager
 import com.hdn.adsmodule.model.AdValue
+import com.hdn.adsmodule.model.BannerMargin
 import com.hdn.adsmodule.model.AdsLog
 import com.hdn.adsmodule.model._enum.BannerType
 
@@ -70,10 +72,12 @@ object BannerAds {
             .build()
     }
 
-    fun getAdSize(activity: Activity): AdSize {
+    /** Adaptive size theo bề rộng màn hình trừ margin start + end. */
+    @JvmOverloads
+    fun getAdSize(activity: Activity, margin: BannerMargin = BannerMargin.NONE): AdSize {
         val outMetrics = DisplayMetrics()
         activity.windowManager.defaultDisplay.getMetrics(outMetrics)
-        val adWidth = (outMetrics.widthPixels / outMetrics.density).toInt()
+        val adWidth = (outMetrics.widthPixels / outMetrics.density).toInt() - margin.start - margin.end
         return AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(activity, adWidth)
     }
 
@@ -83,6 +87,7 @@ object BannerAds {
         activity: Activity,
         type: BannerType,
         adUnitIds: List<String> = getBannerIdDefault(type),
+        margin: BannerMargin = BannerMargin.NONE,
         onFinished: ((View) -> Unit)? = null,
     ): View {
         if (!AdsController.canShowAds()) {
@@ -109,13 +114,25 @@ object BannerAds {
         )
         val viewRoot =
             LayoutInflater.from(activity).inflate(R.layout.banner_ads, null, false)//loading layout
+        if (!margin.isEmpty) {
+            val density = activity.resources.displayMetrics.density
+            viewRoot.layoutParams = ViewGroup.MarginLayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            ).apply {
+                marginStart = (margin.start * density).toInt()
+                topMargin = (margin.top * density).toInt()
+                marginEnd = (margin.end * density).toInt()
+                bottomMargin = (margin.bottom * density).toInt()
+            }
+        }
         val adViewContainer: LinearLayout = viewRoot.findViewById(R.id.adView_container)
         val loadingText: View = viewRoot.findViewById(R.id.tv_loading)
         val loadingOverlay: View = viewRoot.findViewById(R.id.view_d)
 
         val bannerType = type
 
-        val adSize = getAdSize(activity)
+        val adSize = getAdSize(activity, margin)
         val idsToUse = adUnitIds.ifEmpty { getBannerIdDefault(bannerType) }
         loadingText.minimumHeight = adSize.getHeightInPixels(activity)
 
@@ -210,7 +227,11 @@ object BannerAds {
             }
 
             adListener = object : AdListener() {
+                /** True once this AdView has shown an ad; later failures are refreshes. */
+                private var hasLoaded = false
+
                 override fun onAdLoaded() {
+                    hasLoaded = true
                     if (bannerType == BannerType.NORMAL) {
                         isBannerLoaded = true
                         globalBannerView = this@apply
@@ -249,6 +270,20 @@ object BannerAds {
                 }
 
                 override fun onAdFailedToLoad(error: LoadAdError) {
+                    if (hasLoaded) {
+                        // Refresh failed: AdMob keeps showing the last ad and retries on the
+                        // next cycle, so keep this banner (and the shared cache) as it is.
+                        AdsManager.onAdsLog(
+                            AdsLog(
+                                if (bannerType == BannerType.NORMAL) AdsLog.Type.BANNER else AdsLog.Type.BANNER_COLLAPSIBLE,
+                                adUnitId,
+                                AdsLog.Action.LOAD,
+                                AdsLog.Mess.REFRESH_FAILED,
+                                error
+                            )
+                        )
+                        return
+                    }
                     if (bannerType == BannerType.NORMAL) {
                         isBannerLoaded = false
                         globalBannerView = null

@@ -13,6 +13,7 @@ import com.hdn.adsmodule.ads.nativeAds.NativeAds
 import com.hdn.adsmodule.ads.open.OpenAds
 import com.hdn.adsmodule.ads.reward.RewardAds
 import com.hdn.adsmodule.ads.reward.RewardAds.RewardCallback
+import com.hdn.adsmodule.model.BannerMargin
 import com.hdn.adsmodule.model.AdValue
 import com.hdn.adsmodule.model.AdsLog
 import com.hdn.adsmodule.model._enum.BannerType
@@ -127,9 +128,16 @@ object AdsManager {
     }
 
     //    banner
+    // margin: khoảng cách 4 hướng quanh banner (dp, adaptive size co theo start + end), mặc định full width.
     @JvmStatic
-    fun showBannerAds(activity: Activity, type: BannerType, container: ViewGroup) {
-        BannerAds.createBannerView(activity, type) {
+    @JvmOverloads
+    fun showBannerAds(
+        activity: Activity,
+        type: BannerType,
+        container: ViewGroup,
+        margin: BannerMargin = BannerMargin.NONE
+    ) {
+        BannerAds.createBannerView(activity, type, margin = margin) {
             container.removeAllViews()
             container.addView(it)
         }

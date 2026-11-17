@@ -13,6 +13,7 @@ import com.hdn.adsmodule.ads.inter.InterAds;
 import com.hdn.adsmodule.ads.inter.InterSplashAds;
 import com.hdn.adsmodule.ads.open.OpenAds;
 import com.hdn.adsmodule.ads.reward.RewardAds;
+import com.hdn.adsmodule.model.BannerMargin;
 import com.hdn.adsmodule.model._enum.BannerType;
 import com.hdn.theme.testmoduleads.databinding.ActivityMainBinding;
 
@@ -50,7 +51,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initEvent() {
-        binding.showBna.setOnClickListener(v -> AdsManager.showBannerAds(this, BannerType.NORMAL, binding.adFrame));
+        binding.showBna.setOnClickListener(v -> AdsManager.showBannerAds(this, BannerType.NORMAL, binding.adFrame,new BannerMargin(16,0,16,0)));
         binding.showBnca.setOnClickListener(v -> AdsManager.showBannerAds(this, BannerType.COLLAPSIBLE, binding.adFrame));
 
         binding.showOpa.setOnClickListener(view -> AdsManager.showOpenAds(this, null));
