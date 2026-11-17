@@ -59,8 +59,12 @@ object BannerAds {
             }
         }
 
-    private var globalBannerView: AdView? = null
-    private var isBannerLoaded = false
+    /** Banner NORMAL đã load, dùng lại giữa các màn. */
+    private class CachedBanner(val view: AdView, var loaded: Boolean)
+
+    // Cache theo bề rộng AdSize (dp): màn full width và màn có margin mỗi bên giữ AdView riêng,
+    // tránh dùng lại AdView rộng hơn container (bị cắt 2 bên). Cùng bề rộng thì vẫn dùng chung.
+    private val normalBanners = mutableMapOf<Int, CachedBanner>()
 
     private fun getAdRequest(type: BannerType): AdRequest = when (type) {
         BannerType.NORMAL -> AdRequest.Builder().build()
@@ -91,9 +95,8 @@ object BannerAds {
         onFinished: ((View) -> Unit)? = null,
     ): View {
         if (!AdsController.canShowAds()) {
-            globalBannerView?.destroy()
-            globalBannerView = null
-            isBannerLoaded = false
+            normalBanners.values.forEach { it.view.destroy() }
+            normalBanners.clear()
 
             val emptyView = View(activity)
             emptyView.layoutParams = LinearLayout.LayoutParams(
@@ -137,12 +140,13 @@ object BannerAds {
         loadingText.minimumHeight = adSize.getHeightInPixels(activity)
 
         if (bannerType == BannerType.NORMAL) {
-            val cachedBanner = globalBannerView
+            val cachedBanner = normalBanners[adSize.width]
             if (cachedBanner != null) {
-                (cachedBanner.parent as? LinearLayout)?.removeView(cachedBanner)
+                val cachedView = cachedBanner.view
+                (cachedView.parent as? LinearLayout)?.removeView(cachedView)
                 adViewContainer.removeAllViews()
-                adViewContainer.addView(cachedBanner)
-                if (isBannerLoaded || adViewContainer.isNotEmpty()) {
+                adViewContainer.addView(cachedView)
+                if (cachedBanner.loaded || adViewContainer.isNotEmpty()) {
                     hideLoading(loadingText, loadingOverlay)
                     AdsManager.onAdsLog(
                         AdsLog(AdsLog.Type.BANNER, "", AdsLog.Action.SHOW, AdsLog.Mess.SHOW_SUCCESS, null)
@@ -198,8 +202,7 @@ object BannerAds {
     ) {
         if (index >= ids.size) {
             if (bannerType == BannerType.NORMAL) {
-                isBannerLoaded = false
-                globalBannerView = null
+                normalBanners.remove(adSize.width)
             }
             hideLoading(loadingText, loadingOverlay)
             return
@@ -233,8 +236,7 @@ object BannerAds {
                 override fun onAdLoaded() {
                     hasLoaded = true
                     if (bannerType == BannerType.NORMAL) {
-                        isBannerLoaded = true
-                        globalBannerView = this@apply
+                        normalBanners[adSize.width] = CachedBanner(this@apply, loaded = true)
                     }
                     AdsManager.onAdsLog(
                         AdsLog(
@@ -272,7 +274,7 @@ object BannerAds {
                 override fun onAdFailedToLoad(error: LoadAdError) {
                     if (hasLoaded) {
                         // Refresh failed: AdMob keeps showing the last ad and retries on the
-                        // next cycle, so keep this banner (and the shared cache) as it is.
+                        // next cycle, so keep this banner (and its cache entry) as it is.
                         AdsManager.onAdsLog(
                             AdsLog(
                                 if (bannerType == BannerType.NORMAL) AdsLog.Type.BANNER else AdsLog.Type.BANNER_COLLAPSIBLE,
@@ -285,8 +287,7 @@ object BannerAds {
                         return
                     }
                     if (bannerType == BannerType.NORMAL) {
-                        isBannerLoaded = false
-                        globalBannerView = null
+                        normalBanners.remove(adSize.width)
                     }
                     AdsManager.onAdsLog(
                         AdsLog(
@@ -313,7 +314,7 @@ object BannerAds {
         }
 
         if (bannerType == BannerType.NORMAL && index == 0) {
-            globalBannerView = bannerView
+            normalBanners[adSize.width] = CachedBanner(bannerView, loaded = false)
         }
         adViewContainer.addView(bannerView)
 
